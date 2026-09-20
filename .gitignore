@@ -25,5 +25,5 @@ logs/
 Thumbs.db
 .DS_Store
 
-## Agents (AI IDE config — optional, include if you want AI rules tracked)
-# .agents/
+## Agents & AI Config
+.agents/
