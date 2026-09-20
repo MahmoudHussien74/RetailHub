@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RetailHub.API/RetailHub.API.csproj" />
+    <Project Path="src/RetailHub.Application/RetailHub.Application.csproj" />
+    <Project Path="src/RetailHub.Domain/RetailHub.Domain.csproj" />
+    <Project Path="src/RetailHub.Infrastructure/RetailHub.Infrastructure.csproj" />
+  </Folder>
+</Solution>

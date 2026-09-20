@@ -1,0 +1,29 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+## User Secrets & Sensitive Config
+appsettings.Development.json
+appsettings.Production.json
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+## Logs
+logs/
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Agents (AI IDE config — optional, include if you want AI rules tracked)
+# .agents/
