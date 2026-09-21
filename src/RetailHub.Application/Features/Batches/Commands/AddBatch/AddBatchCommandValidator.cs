@@ -20,7 +20,7 @@ public class AddBatchCommandValidator : AbstractValidator<AddBatchCommand>
             .WithMessage(_ => string.Format(localizer[MessageKeys.MustBePositive], localizer[MessageKeys.BatchPurchasePrice]));
 
         RuleFor(x => x.ExpiryDate)
-            .GreaterThan(DateTime.UtcNow)
+            .GreaterThan(_ => DateTime.UtcNow)
             .WithMessage(_ => localizer[MessageKeys.ExpiryDateMustBeFuture].Value);
     }
 }

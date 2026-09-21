@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using RetailHub.API.Common;
+using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Features.Brands.Commands.CreateBrand;
 using RetailHub.Application.Features.Brands.Commands.DeleteBrand;
 using RetailHub.Application.Features.Brands.Commands.UpdateBrand;
@@ -14,8 +16,13 @@ namespace RetailHub.API.Controllers;
 public class BrandsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IStringLocalizer<Messages> _localizer;
 
-    public BrandsController(IMediator mediator) => _mediator = mediator;
+    public BrandsController(IMediator mediator, IStringLocalizer<Messages> localizer)
+    {
+        _mediator = mediator;
+        _localizer = localizer;
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -68,7 +75,7 @@ public class BrandsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         if (id != command.Id)
-            return BadRequest(new ApiResponse<object> { Success = false, Message = "Route ID and body ID mismatch." });
+            return BadRequest(new ApiResponse<object> { Success = false, Message = _localizer[MessageKeys.RouteIdMismatch] });
 
         var result = await _mediator.Send(command, cancellationToken);
 

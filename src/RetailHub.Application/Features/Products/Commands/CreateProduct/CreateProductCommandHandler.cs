@@ -23,6 +23,12 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         if (await _unitOfWork.Products.ExistsAsync(request.Barcode, ct))
             return Result<Guid>.Failure(string.Format(_localizer[MessageKeys.ProductBarcodeExists], request.Barcode));
 
+        if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId, ct))
+            return Result<Guid>.Failure(_localizer[MessageKeys.CategoryNotFound]);
+
+        if (!await _unitOfWork.Brands.ExistsAsync(request.BrandId, ct))
+            return Result<Guid>.Failure(_localizer[MessageKeys.BrandNotFound]);
+
         var product = Product.Create(
             request.Barcode,
             request.NameAr,

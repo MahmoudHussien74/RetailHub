@@ -24,6 +24,12 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
         if (category is null)
             return Result.Failure(_localizer[MessageKeys.CategoryNotFound]);
 
+        if (category.NameAr != request.NameAr &&
+            await _unitOfWork.Categories.ExistsByNameAsync(request.NameAr, request.Id, ct))
+        {
+            return Result.Failure(string.Format(_localizer[MessageKeys.CategoryAlreadyExists], request.NameAr));
+        }
+
         category.Update(request.NameAr, request.NameEn, request.DescriptionAr, request.DescriptionEn);
         _unitOfWork.Categories.Update(category);
         await _unitOfWork.SaveChangesAsync(ct);

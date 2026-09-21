@@ -25,10 +25,13 @@ public class AddBatchCommandHandler : IRequestHandler<AddBatchCommand, Result<Gu
 
     public async Task<Result<Guid>> Handle(AddBatchCommand request, CancellationToken ct)
     {
-        // 1. Verify product exists
+        // 1. Verify product and warehouse exist
         var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId, ct);
         if (product is null)
             return Result<Guid>.Failure(_localizer[MessageKeys.ProductNotFound]);
+
+        if (!await _unitOfWork.Warehouses.ExistsAsync(request.WarehouseId, ct))
+            return Result<Guid>.Failure(_localizer[MessageKeys.WarehouseNotFound]);
 
         // 2. Create the new Batch
         var batch = Batch.Create(

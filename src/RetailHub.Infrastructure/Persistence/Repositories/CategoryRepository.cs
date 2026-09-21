@@ -19,6 +19,12 @@ public class CategoryRepository : ICategoryRepository
     public void Update(Category category) =>
         _context.Categories.Update(category);
 
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken ct = default) =>
+        await _context.Categories.AnyAsync(c => c.Id == id && c.IsActive, ct);
+
     public async Task<bool> ExistsByNameAsync(string nameAr, CancellationToken ct = default) =>
         await _context.Categories.AnyAsync(c => c.NameAr == nameAr && c.IsActive, ct);
+
+    public async Task<bool> ExistsByNameAsync(string nameAr, Guid excludeId, CancellationToken ct = default) =>
+        await _context.Categories.AnyAsync(c => c.NameAr == nameAr && c.Id != excludeId && c.IsActive, ct);
 }

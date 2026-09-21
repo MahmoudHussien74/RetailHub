@@ -24,6 +24,12 @@ public class UpdateBrandCommandHandler : IRequestHandler<UpdateBrandCommand, Res
         if (brand is null)
             return Result.Failure(_localizer[MessageKeys.BrandNotFound]);
 
+        if (brand.NameAr != request.NameAr &&
+            await _unitOfWork.Brands.ExistsByNameAsync(request.NameAr, request.Id, ct))
+        {
+            return Result.Failure(string.Format(_localizer[MessageKeys.BrandAlreadyExists], request.NameAr));
+        }
+
         brand.Update(request.NameAr, request.NameEn);
         _unitOfWork.Brands.Update(brand);
         await _unitOfWork.SaveChangesAsync(ct);

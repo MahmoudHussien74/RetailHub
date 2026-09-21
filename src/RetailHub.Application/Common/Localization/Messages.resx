@@ -74,4 +74,5 @@
 
   <!-- ── General / Global Exception ── -->
   <data name="UnexpectedError" xml:space="preserve"><value>An unexpected error occurred. Please try again later.</value></data>
+  <data name="RouteIdMismatch" xml:space="preserve"><value>Route ID and body ID mismatch.</value></data>
 </root>

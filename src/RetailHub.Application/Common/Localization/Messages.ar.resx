@@ -74,4 +74,5 @@
 
   <!-- ── عام / أخطاء غير متوقعة ── -->
   <data name="UnexpectedError" xml:space="preserve"><value>حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقاً.</value></data>
+  <data name="RouteIdMismatch" xml:space="preserve"><value>معرف المسار لا يتطابق مع معرف الكائن.</value></data>
 </root>

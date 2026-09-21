@@ -24,6 +24,12 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
         if (product is null)
             return Result.Failure(_localizer[MessageKeys.ProductNotFound]);
 
+        if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId, ct))
+            return Result.Failure(_localizer[MessageKeys.CategoryNotFound]);
+
+        if (!await _unitOfWork.Brands.ExistsAsync(request.BrandId, ct))
+            return Result.Failure(_localizer[MessageKeys.BrandNotFound]);
+
         product.Update(request.NameAr, request.NameEn, request.CategoryId, request.BrandId);
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(ct);

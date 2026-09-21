@@ -49,4 +49,5 @@ public static class MessageKeys
 
     // ── General ──
     public const string UnexpectedError = nameof(UnexpectedError);
+    public const string RouteIdMismatch = nameof(RouteIdMismatch);
 }

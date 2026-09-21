@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using RetailHub.API.Common;
+using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Features.Batches.Commands.AddBatch;
 using RetailHub.Application.Features.Batches.Queries.GetBatchesByProduct;
 
@@ -11,8 +13,13 @@ namespace RetailHub.API.Controllers;
 public class BatchesController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IStringLocalizer<Messages> _localizer;
 
-    public BatchesController(IMediator mediator) => _mediator = mediator;
+    public BatchesController(IMediator mediator, IStringLocalizer<Messages> localizer)
+    {
+        _mediator = mediator;
+        _localizer = localizer;
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetByProduct(
@@ -35,7 +42,7 @@ public class BatchesController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         if (productId != command.ProductId)
-            return BadRequest(new ApiResponse<object> { Success = false, Message = "Route ProductId and body ProductId mismatch." });
+            return BadRequest(new ApiResponse<object> { Success = false, Message = _localizer[MessageKeys.RouteIdMismatch] });
 
         var result = await _mediator.Send(command, cancellationToken);
 

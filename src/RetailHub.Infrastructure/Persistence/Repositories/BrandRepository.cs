@@ -19,6 +19,12 @@ public class BrandRepository : IBrandRepository
     public void Update(Brand brand) =>
         _context.Brands.Update(brand);
 
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken ct = default) =>
+        await _context.Brands.AnyAsync(b => b.Id == id && b.IsActive, ct);
+
     public async Task<bool> ExistsByNameAsync(string nameAr, CancellationToken ct = default) =>
         await _context.Brands.AnyAsync(b => b.NameAr == nameAr && b.IsActive, ct);
+
+    public async Task<bool> ExistsByNameAsync(string nameAr, Guid excludeId, CancellationToken ct = default) =>
+        await _context.Brands.AnyAsync(b => b.NameAr == nameAr && b.Id != excludeId && b.IsActive, ct);
 }
