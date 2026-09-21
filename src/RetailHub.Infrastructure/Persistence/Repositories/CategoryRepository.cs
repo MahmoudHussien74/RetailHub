@@ -19,6 +19,6 @@ public class CategoryRepository : ICategoryRepository
     public void Update(Category category) =>
         _context.Categories.Update(category);
 
-    public async Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default) =>
-        await _context.Categories.AnyAsync(c => c.Name == name && c.IsActive, ct);
+    public async Task<bool> ExistsByNameAsync(string nameAr, CancellationToken ct = default) =>
+        await _context.Categories.AnyAsync(c => c.NameAr == nameAr && c.IsActive, ct);
 }

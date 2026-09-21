@@ -10,8 +10,11 @@ public class BrandConfiguration : IEntityTypeConfiguration<Brand>
     {
         builder.HasKey(b => b.Id);
 
-        builder.Property(b => b.Name)
+        builder.Property(b => b.NameAr)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(150);
+
+        builder.Property(b => b.NameEn)
+            .HasMaxLength(150);
     }
 }

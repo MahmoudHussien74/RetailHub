@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- ── التحقق: عام ── -->
+  <data name="ValidationErrorOccurred" xml:space="preserve"><value>حدث خطأ أو أكثر في التحقق من البيانات.</value></data>
+  <data name="RequiredField" xml:space="preserve"><value>{0} مطلوب.</value></data>
+  <data name="MaxLengthExceeded" xml:space="preserve"><value>يجب ألا يتجاوز {0} {1} حرفاً.</value></data>
+  <data name="MustBePositive" xml:space="preserve"><value>{0} يجب أن يكون أكبر من صفر.</value></data>
+  <data name="MustNotBeNegative" xml:space="preserve"><value>{0} لا يمكن أن يكون سالباً.</value></data>
+
+  <!-- ── التصنيف ── -->
+  <data name="CategoryNameAr" xml:space="preserve"><value>اسم التصنيف بالعربية</value></data>
+  <data name="CategoryNameEn" xml:space="preserve"><value>اسم التصنيف بالإنجليزية</value></data>
+  <data name="CategoryNotFound" xml:space="preserve"><value>التصنيف غير موجود.</value></data>
+  <data name="CategoryAlreadyExists" xml:space="preserve"><value>التصنيف '{0}' مسجل مسبقاً.</value></data>
+
+  <!-- ── العلامة التجارية ── -->
+  <data name="BrandNameAr" xml:space="preserve"><value>اسم العلامة التجارية بالعربية</value></data>
+  <data name="BrandNameEn" xml:space="preserve"><value>اسم العلامة التجارية بالإنجليزية</value></data>
+  <data name="BrandNotFound" xml:space="preserve"><value>العلامة التجارية غير موجودة.</value></data>
+  <data name="BrandAlreadyExists" xml:space="preserve"><value>العلامة التجارية '{0}' مسجلة مسبقاً.</value></data>
+
+  <!-- ── المنتج ── -->
+  <data name="ProductNameAr" xml:space="preserve"><value>اسم المنتج بالعربية</value></data>
+  <data name="ProductNameEn" xml:space="preserve"><value>اسم المنتج بالإنجليزية</value></data>
+  <data name="ProductBarcode" xml:space="preserve"><value>باركود المنتج</value></data>
+  <data name="ProductSellingPrice" xml:space="preserve"><value>سعر البيع</value></data>
+  <data name="ProductNotFound" xml:space="preserve"><value>المنتج غير موجود.</value></data>
+  <data name="ProductBarcodeExists" xml:space="preserve"><value>الباركود '{0}' مستخدم لمنتج آخر بالفعل.</value></data>
+  <data name="ProductCategoryRequired" xml:space="preserve"><value>التصنيف مطلوب.</value></data>
+  <data name="ProductBrandRequired" xml:space="preserve"><value>العلامة التجارية مطلوبة.</value></data>
+
+  <!-- ── المخزن ── -->
+  <data name="WarehouseNotFound" xml:space="preserve"><value>المخزن غير موجود.</value></data>
+  <data name="DefaultWarehouseNotFound" xml:space="preserve"><value>المخزن الافتراضي غير موجود. يرجى التواصل مع مسؤول النظام.</value></data>
+
+  <!-- ── الدفعة ── -->
+  <data name="BatchNotFound" xml:space="preserve"><value>الدفعة غير موجودة.</value></data>
+  <data name="BatchQuantity" xml:space="preserve"><value>كمية الدفعة</value></data>
+  <data name="BatchPurchasePrice" xml:space="preserve"><value>سعر الشراء</value></data>
+  <data name="BatchExpiryDate" xml:space="preserve"><value>تاريخ الصلاحية</value></data>
+  <data name="ExpiryDateMustBeFuture" xml:space="preserve"><value>تاريخ الصلاحية يجب أن يكون في المستقبل.</value></data>
+
+  <!-- ── عام / أخطاء غير متوقعة ── -->
+  <data name="UnexpectedError" xml:space="preserve"><value>حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقاً.</value></data>
+</root>

@@ -19,6 +19,6 @@ public class BrandRepository : IBrandRepository
     public void Update(Brand brand) =>
         _context.Brands.Update(brand);
 
-    public async Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default) =>
-        await _context.Brands.AnyAsync(b => b.Name == name && b.IsActive, ct);
+    public async Task<bool> ExistsByNameAsync(string nameAr, CancellationToken ct = default) =>
+        await _context.Brands.AnyAsync(b => b.NameAr == nameAr && b.IsActive, ct);
 }

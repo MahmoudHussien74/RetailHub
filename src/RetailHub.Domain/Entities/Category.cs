@@ -4,8 +4,10 @@ namespace RetailHub.Domain.Entities;
 
 public class Category : AuditableEntity
 {
-    public string Name { get; private set; } = string.Empty;
-    public string? Description { get; private set; }
+    public string NameAr { get; private set; } = string.Empty;
+    public string? NameEn { get; private set; }
+    public string? DescriptionAr { get; private set; }
+    public string? DescriptionEn { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     // Navigation
@@ -13,19 +15,31 @@ public class Category : AuditableEntity
 
     private Category() { } // EF Core
 
-    public static Category Create(string name, string? description = null)
+    public static Category Create(
+        string nameAr,
+        string? nameEn = null,
+        string? descriptionAr = null,
+        string? descriptionEn = null)
     {
         return new Category
         {
-            Name = name,
-            Description = description
+            NameAr = nameAr,
+            NameEn = nameEn,
+            DescriptionAr = descriptionAr,
+            DescriptionEn = descriptionEn
         };
     }
 
-    public void Update(string name, string? description)
+    public void Update(
+        string nameAr,
+        string? nameEn,
+        string? descriptionAr,
+        string? descriptionEn)
     {
-        Name = name;
-        Description = description;
+        NameAr = nameAr;
+        NameEn = nameEn;
+        DescriptionAr = descriptionAr;
+        DescriptionEn = descriptionEn;
     }
 
     public void Deactivate() => IsActive = false;
