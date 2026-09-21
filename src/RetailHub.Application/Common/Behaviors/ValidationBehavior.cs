@@ -32,7 +32,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
     {
         // If no validators registered for this request, skip validation
         if (!_validators.Any())
-            return await next(cancellationToken);
+            return await next();
 
         var context = new ValidationContext<TRequest>(request);
 
@@ -49,6 +49,6 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         if (errors.Count != 0)
             return TResponse.CreateValidationFailure(errors);
 
-        return await next(cancellationToken);
+        return await next();
     }
 }
