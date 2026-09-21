@@ -18,9 +18,12 @@ public class BrandsController : ControllerBase
     public BrandsController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetAllBrandsQuery(page, pageSize));
+        var result = await _mediator.Send(new GetAllBrandsQuery(page, pageSize), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -28,9 +31,9 @@ public class BrandsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetBrandByIdQuery(id));
+        var result = await _mediator.Send(new GetBrandByIdQuery(id), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -38,9 +41,11 @@ public class BrandsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBrandCommand command)
+    public async Task<IActionResult> Create(
+        [FromBody] CreateBrandCommand command,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.ValidationErrors.Count > 0)
             return BadRequest(new ApiResponse<object>
@@ -57,12 +62,15 @@ public class BrandsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBrandCommand command)
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] UpdateBrandCommand command,
+        CancellationToken cancellationToken = default)
     {
         if (id != command.Id)
             return BadRequest(new ApiResponse<object> { Success = false, Message = "Route ID and body ID mismatch." });
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.ValidationErrors.Count > 0)
             return BadRequest(new ApiResponse<object>
@@ -78,9 +86,9 @@ public class BrandsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new DeleteBrandCommand(id));
+        var result = await _mediator.Send(new DeleteBrandCommand(id), cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

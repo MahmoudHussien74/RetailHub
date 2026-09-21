@@ -18,9 +18,12 @@ public class CategoriesController : ControllerBase
     public CategoriesController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetAllCategoriesQuery(page, pageSize));
+        var result = await _mediator.Send(new GetAllCategoriesQuery(page, pageSize), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -28,9 +31,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetCategoryByIdQuery(id));
+        var result = await _mediator.Send(new GetCategoryByIdQuery(id), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -38,9 +41,11 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCategoryCommand command)
+    public async Task<IActionResult> Create(
+        [FromBody] CreateCategoryCommand command,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.ValidationErrors.Count > 0)
             return BadRequest(new ApiResponse<object>
@@ -57,12 +62,15 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCategoryCommand command)
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] UpdateCategoryCommand command,
+        CancellationToken cancellationToken = default)
     {
         if (id != command.Id)
             return BadRequest(new ApiResponse<object> { Success = false, Message = "Route ID and body ID mismatch." });
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.ValidationErrors.Count > 0)
             return BadRequest(new ApiResponse<object>
@@ -78,9 +86,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new DeleteCategoryCommand(id));
+        var result = await _mediator.Send(new DeleteCategoryCommand(id), cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

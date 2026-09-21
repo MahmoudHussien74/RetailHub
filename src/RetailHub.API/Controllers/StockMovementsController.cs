@@ -17,9 +17,10 @@ public class StockMovementsController : ControllerBase
     public async Task<IActionResult> GetByProduct(
         Guid productId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetMovementsByProductQuery(productId, page, pageSize));
+        var result = await _mediator.Send(new GetMovementsByProductQuery(productId, page, pageSize), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })

@@ -22,9 +22,10 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProductsQuery(page, pageSize, search));
+        var result = await _mediator.Send(new GetProductsQuery(page, pageSize, search), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -32,9 +33,9 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProductByIdQuery(id));
+        var result = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -42,9 +43,9 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("barcode/{barcode}")]
-    public async Task<IActionResult> GetByBarcode(string barcode)
+    public async Task<IActionResult> GetByBarcode(string barcode, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProductByBarcodeQuery(barcode));
+        var result = await _mediator.Send(new GetProductByBarcodeQuery(barcode), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -52,9 +53,11 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
+    public async Task<IActionResult> Create(
+        [FromBody] CreateProductCommand command,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.ValidationErrors.Count > 0)
             return BadRequest(new ApiResponse<object>
@@ -71,12 +74,15 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProductCommand command)
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] UpdateProductCommand command,
+        CancellationToken cancellationToken = default)
     {
         if (id != command.Id)
             return BadRequest(new ApiResponse<object> { Success = false, Message = "Route ID and body ID mismatch." });
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.ValidationErrors.Count > 0)
             return BadRequest(new ApiResponse<object>
@@ -92,9 +98,9 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Deactivate(Guid id)
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new DeactivateProductCommand(id));
+        var result = await _mediator.Send(new DeactivateProductCommand(id), cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

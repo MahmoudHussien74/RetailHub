@@ -18,9 +18,10 @@ public class BatchesController : ControllerBase
     public async Task<IActionResult> GetByProduct(
         Guid productId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetBatchesByProductQuery(productId, page, pageSize));
+        var result = await _mediator.Send(new GetBatchesByProductQuery(productId, page, pageSize), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -28,13 +29,15 @@ public class BatchesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddBatch(Guid productId, [FromBody] AddBatchCommand command)
+    public async Task<IActionResult> AddBatch(
+        Guid productId,
+        [FromBody] AddBatchCommand command,
+        CancellationToken cancellationToken = default)
     {
-        // Ensure route productId matches command body
         if (productId != command.ProductId)
             return BadRequest(new ApiResponse<object> { Success = false, Message = "Route ProductId and body ProductId mismatch." });
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.ValidationErrors.Count > 0)
             return BadRequest(new ApiResponse<object>

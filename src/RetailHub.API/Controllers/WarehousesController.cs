@@ -14,9 +14,9 @@ public class WarehousesController : ControllerBase
     public WarehousesController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet("default")]
-    public async Task<IActionResult> GetDefault()
+    public async Task<IActionResult> GetDefault(CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetDefaultWarehouseQuery());
+        var result = await _mediator.Send(new GetDefaultWarehouseQuery(), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
