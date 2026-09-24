@@ -16,4 +16,6 @@ public interface IAppDbContext
     IQueryable<Warehouse> Warehouses { get; }
     IQueryable<Batch> Batches { get; }
     IQueryable<StockMovement> StockMovements { get; }
+    IQueryable<Invoice> Invoices { get; }
+    IQueryable<InvoiceItem> InvoiceItems { get; }
 }

@@ -1,11 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 using RetailHub.API.Common;
-using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Features.Brands.Commands.CreateBrand;
 using RetailHub.Application.Features.Brands.Commands.DeleteBrand;
 using RetailHub.Application.Features.Brands.Commands.UpdateBrand;
+using RetailHub.Application.Features.Brands.DTOs;
 using RetailHub.Application.Features.Brands.Queries.GetAllBrands;
 using RetailHub.Application.Features.Brands.Queries.GetBrandById;
 
@@ -16,13 +15,8 @@ namespace RetailHub.API.Controllers;
 public class BrandsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IStringLocalizer<Messages> _localizer;
 
-    public BrandsController(IMediator mediator, IStringLocalizer<Messages> localizer)
-    {
-        _mediator = mediator;
-        _localizer = localizer;
-    }
+    public BrandsController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -70,12 +64,11 @@ public class BrandsController : ControllerBase
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] UpdateBrandCommand command,
+        [FromRoute] Guid id,
+        [FromBody] UpdateBrandRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (id != command.Id)
-            return BadRequest(new ApiResponse<object> { Success = false, Message = _localizer[MessageKeys.RouteIdMismatch] });
+        var command = new UpdateBrandCommand(id, request.NameAr, request.NameEn);
 
         var result = await _mediator.Send(command, cancellationToken);
 

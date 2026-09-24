@@ -15,6 +15,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Batch> Batches => Set<Batch>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
 
     // IAppDbContext — exposes IQueryable for Query handlers (Projection + AsNoTracking)
     IQueryable<Product> IAppDbContext.Products => Products.AsNoTracking();
@@ -23,6 +25,8 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<Warehouse> IAppDbContext.Warehouses => Warehouses.AsNoTracking();
     IQueryable<Batch> IAppDbContext.Batches => Batches.AsNoTracking();
     IQueryable<StockMovement> IAppDbContext.StockMovements => StockMovements.AsNoTracking();
+    IQueryable<Invoice> IAppDbContext.Invoices => Invoices.AsNoTracking();
+    IQueryable<InvoiceItem> IAppDbContext.InvoiceItems => InvoiceItems.AsNoTracking();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

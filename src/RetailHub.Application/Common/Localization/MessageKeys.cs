@@ -50,4 +50,13 @@ public static class MessageKeys
     // ── General ──
     public const string UnexpectedError = nameof(UnexpectedError);
     public const string RouteIdMismatch = nameof(RouteIdMismatch);
+
+    // ── Invoice ──
+    public const string InvoiceNotFound = nameof(InvoiceNotFound);
+    public const string InvoiceAlreadyVoided = nameof(InvoiceAlreadyVoided);
+    public const string InvoiceItemsRequired = nameof(InvoiceItemsRequired);
+    public const string InvoiceAmountPaid = nameof(InvoiceAmountPaid);
+    public const string InsufficientStock = nameof(InsufficientStock);
+    public const string InvoiceQuantity = nameof(InvoiceQuantity);
+    public const string InvoiceProductId = nameof(InvoiceProductId);
 }

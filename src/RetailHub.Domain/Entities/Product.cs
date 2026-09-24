@@ -17,6 +17,7 @@ public class Product : AuditableEntity
     public Category Category { get; private set; } = null!;
     public Brand Brand { get; private set; } = null!;
     public ICollection<Batch> Batches { get; private set; } = [];
+    public ICollection<InvoiceItem> InvoiceItems { get; private set; } = [];
 
     private Product() { } // EF Core
 

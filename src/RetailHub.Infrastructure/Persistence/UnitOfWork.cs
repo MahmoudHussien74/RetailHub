@@ -18,6 +18,7 @@ public class UnitOfWork : IUnitOfWork
     private ICategoryRepository? _categories;
     private IBrandRepository? _brands;
     private IWarehouseRepository? _warehouses;
+    private IInvoiceRepository? _invoices;
 
     public UnitOfWork(AppDbContext context) => _context = context;
 
@@ -38,6 +39,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IWarehouseRepository Warehouses =>
         _warehouses ??= new WarehouseRepository(_context);
+
+    public IInvoiceRepository Invoices =>
+        _invoices ??= new InvoiceRepository(_context);
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         _context.SaveChangesAsync(ct);

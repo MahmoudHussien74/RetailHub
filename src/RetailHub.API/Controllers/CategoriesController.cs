@@ -1,11 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 using RetailHub.API.Common;
-using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Features.Categories.Commands.CreateCategory;
 using RetailHub.Application.Features.Categories.Commands.DeleteCategory;
 using RetailHub.Application.Features.Categories.Commands.UpdateCategory;
+using RetailHub.Application.Features.Categories.DTOs;
 using RetailHub.Application.Features.Categories.Queries.GetAllCategories;
 using RetailHub.Application.Features.Categories.Queries.GetCategoryById;
 
@@ -16,13 +15,8 @@ namespace RetailHub.API.Controllers;
 public class CategoriesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IStringLocalizer<Messages> _localizer;
 
-    public CategoriesController(IMediator mediator, IStringLocalizer<Messages> localizer)
-    {
-        _mediator = mediator;
-        _localizer = localizer;
-    }
+    public CategoriesController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -70,12 +64,16 @@ public class CategoriesController : ControllerBase
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] UpdateCategoryCommand command,
+        [FromRoute] Guid id,
+        [FromBody] UpdateCategoryRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (id != command.Id)
-            return BadRequest(new ApiResponse<object> { Success = false, Message = _localizer[MessageKeys.RouteIdMismatch] });
+        var command = new UpdateCategoryCommand(
+            id,
+            request.NameAr,
+            request.NameEn,
+            request.DescriptionAr,
+            request.DescriptionEn);
 
         var result = await _mediator.Send(command, cancellationToken);
 

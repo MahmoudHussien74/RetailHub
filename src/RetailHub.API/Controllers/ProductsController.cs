@@ -1,11 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 using RetailHub.API.Common;
-using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Features.Products.Commands.CreateProduct;
 using RetailHub.Application.Features.Products.Commands.DeactivateProduct;
 using RetailHub.Application.Features.Products.Commands.UpdateProduct;
+using RetailHub.Application.Features.Products.DTOs;
 using RetailHub.Application.Features.Products.Queries.GetProductByBarcode;
 using RetailHub.Application.Features.Products.Queries.GetProductById;
 using RetailHub.Application.Features.Products.Queries.GetProducts;
@@ -17,14 +16,7 @@ namespace RetailHub.API.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IStringLocalizer<Messages> _localizer;
-
-    public ProductsController(IMediator mediator, IStringLocalizer<Messages> localizer)
-    {
-        _mediator = mediator;
-        _localizer = localizer;
-    }
-
+    public ProductsController(IMediator mediator) => _mediator = mediator;
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
@@ -38,7 +30,6 @@ public class ProductsController : ControllerBase
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
             : BadRequest(new ApiResponse<object> { Success = false, Message = result.Error });
     }
-
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken = default)
     {
@@ -48,7 +39,6 @@ public class ProductsController : ControllerBase
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
             : NotFound(new ApiResponse<object> { Success = false, Message = result.Error });
     }
-
     [HttpGet("barcode/{barcode}")]
     public async Task<IActionResult> GetByBarcode(string barcode, CancellationToken cancellationToken = default)
     {
@@ -58,7 +48,6 @@ public class ProductsController : ControllerBase
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
             : NotFound(new ApiResponse<object> { Success = false, Message = result.Error });
     }
-
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateProductCommand command,
@@ -79,15 +68,18 @@ public class ProductsController : ControllerBase
                 new ApiResponse<Guid> { Success = true, Data = result.Value! })
             : BadRequest(new ApiResponse<object> { Success = false, Message = result.Error });
     }
-
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] UpdateProductCommand command,
+        [FromRoute] Guid id,
+        [FromBody] UpdateProductRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (id != command.Id)
-            return BadRequest(new ApiResponse<object> { Success = false, Message = _localizer[MessageKeys.RouteIdMismatch] });
+        var command = new UpdateProductCommand(
+            id,
+            request.NameAr,
+            request.NameEn,
+            request.CategoryId,
+            request.BrandId);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -103,7 +95,6 @@ public class ProductsController : ControllerBase
             ? NoContent()
             : NotFound(new ApiResponse<object> { Success = false, Message = result.Error });
     }
-
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken = default)
     {

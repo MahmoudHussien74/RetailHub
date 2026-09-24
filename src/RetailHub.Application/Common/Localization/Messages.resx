@@ -75,4 +75,13 @@
   <!-- ── General / Global Exception ── -->
   <data name="UnexpectedError" xml:space="preserve"><value>An unexpected error occurred. Please try again later.</value></data>
   <data name="RouteIdMismatch" xml:space="preserve"><value>Route ID and body ID mismatch.</value></data>
+
+  <!-- ── Invoice ── -->
+  <data name="InvoiceNotFound" xml:space="preserve"><value>Invoice not found.</value></data>
+  <data name="InvoiceAlreadyVoided" xml:space="preserve"><value>This invoice has already been voided.</value></data>
+  <data name="InvoiceItemsRequired" xml:space="preserve"><value>At least one item is required to create an invoice.</value></data>
+  <data name="InvoiceAmountPaid" xml:space="preserve"><value>Amount Paid</value></data>
+  <data name="InsufficientStock" xml:space="preserve"><value>Insufficient stock for product '{0}'. Available: {1}, Requested: {2}.</value></data>
+  <data name="InvoiceQuantity" xml:space="preserve"><value>Item Quantity</value></data>
+  <data name="InvoiceProductId" xml:space="preserve"><value>Product ID</value></data>
 </root>
