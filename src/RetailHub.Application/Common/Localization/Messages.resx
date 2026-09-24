@@ -84,4 +84,31 @@
   <data name="InsufficientStock" xml:space="preserve"><value>Insufficient stock for product '{0}'. Available: {1}, Requested: {2}.</value></data>
   <data name="InvoiceQuantity" xml:space="preserve"><value>Item Quantity</value></data>
   <data name="InvoiceProductId" xml:space="preserve"><value>Product ID</value></data>
+
+  <!-- ── Customer ── -->
+  <data name="CustomerName" xml:space="preserve"><value>Customer Name</value></data>
+  <data name="CustomerPhone" xml:space="preserve"><value>Customer Phone</value></data>
+  <data name="CustomerNotFound" xml:space="preserve"><value>Customer not found.</value></data>
+  <data name="CustomerPhoneExists" xml:space="preserve"><value>The phone number '{0}' is already registered to another customer.</value></data>
+
+  <!-- ── Payment ── -->
+  <data name="PaymentAmount" xml:space="preserve"><value>Payment Amount</value></data>
+
+  <!-- ── Supplier ── -->
+  <data name="SupplierName" xml:space="preserve"><value>Supplier Name</value></data>
+  <data name="SupplierNotFound" xml:space="preserve"><value>Supplier not found.</value></data>
+  <data name="SupplierAlreadyExists" xml:space="preserve"><value>A supplier with the name '{0}' already exists.</value></data>
+
+  <!-- ── Purchase Invoice ── -->
+  <data name="PurchaseInvoiceNotFound" xml:space="preserve"><value>Purchase invoice not found.</value></data>
+  <data name="PurchaseItemsRequired" xml:space="preserve"><value>At least one item is required for a purchase invoice.</value></data>
+
+  <!-- ── Return Invoice ── -->
+  <data name="ReturnInvoiceNotFound" xml:space="preserve"><value>Return invoice not found.</value></data>
+  <data name="ReturnInvoiceItemNotFound" xml:space="preserve"><value>Invoice item '{0}' was not found on the original invoice.</value></data>
+  <data name="ReturnOriginalInvoice" xml:space="preserve"><value>Original Invoice ID</value></data>
+  <data name="ReturnItemsRequired" xml:space="preserve"><value>At least one item is required to create a return invoice.</value></data>
+  <data name="ReturnInvoiceItemId" xml:space="preserve"><value>Invoice Item ID</value></data>
+  <data name="ReturnQuantity" xml:space="preserve"><value>Return Quantity</value></data>
+  <data name="ReturnQuantityExceeded" xml:space="preserve"><value>Return quantity ({0}) exceeds remaining returnable quantity ({1}) for item '{2}'.</value></data>
 </root>

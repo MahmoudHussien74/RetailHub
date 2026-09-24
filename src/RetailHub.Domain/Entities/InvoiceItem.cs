@@ -28,6 +28,7 @@ public class InvoiceItem : AuditableEntity
     public Invoice Invoice { get; private set; } = null!;
     public Product Product { get; private set; } = null!;
     public Batch Batch { get; private set; } = null!;
+    public ICollection<ReturnInvoiceItem> ReturnItems { get; private set; } = [];
 
     private InvoiceItem() { } // EF Core
 

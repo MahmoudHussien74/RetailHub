@@ -14,6 +14,7 @@ public class Batch : AuditableEntity
     // Navigation
     public Product Product { get; private set; } = null!;
     public Warehouse Warehouse { get; private set; } = null!;
+    public Supplier? Supplier { get; private set; }
 
     private Batch() { } // EF Core
 

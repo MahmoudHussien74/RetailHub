@@ -18,4 +18,12 @@ public interface IAppDbContext
     IQueryable<StockMovement> StockMovements { get; }
     IQueryable<Invoice> Invoices { get; }
     IQueryable<InvoiceItem> InvoiceItems { get; }
+    IQueryable<Customer> Customers { get; }
+    IQueryable<Payment> Payments { get; }
+    IQueryable<Supplier> Suppliers { get; }
+    IQueryable<PurchaseInvoice> PurchaseInvoices { get; }
+    IQueryable<PurchaseInvoiceItem> PurchaseInvoiceItems { get; }
+    IQueryable<ReturnInvoice> ReturnInvoices { get; }
+    IQueryable<ReturnInvoiceItem> ReturnInvoiceItems { get; }
 }
+

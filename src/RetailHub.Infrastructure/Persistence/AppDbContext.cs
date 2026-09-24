@@ -17,6 +17,13 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<PurchaseInvoice> PurchaseInvoices => Set<PurchaseInvoice>();
+    public DbSet<PurchaseInvoiceItem> PurchaseInvoiceItems => Set<PurchaseInvoiceItem>();
+    public DbSet<ReturnInvoice> ReturnInvoices => Set<ReturnInvoice>();
+    public DbSet<ReturnInvoiceItem> ReturnInvoiceItems => Set<ReturnInvoiceItem>();
 
     // IAppDbContext — exposes IQueryable for Query handlers (Projection + AsNoTracking)
     IQueryable<Product> IAppDbContext.Products => Products.AsNoTracking();
@@ -27,6 +34,13 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<StockMovement> IAppDbContext.StockMovements => StockMovements.AsNoTracking();
     IQueryable<Invoice> IAppDbContext.Invoices => Invoices.AsNoTracking();
     IQueryable<InvoiceItem> IAppDbContext.InvoiceItems => InvoiceItems.AsNoTracking();
+    IQueryable<Customer> IAppDbContext.Customers => Customers.AsNoTracking();
+    IQueryable<Payment> IAppDbContext.Payments => Payments.AsNoTracking();
+    IQueryable<Supplier> IAppDbContext.Suppliers => Suppliers.AsNoTracking();
+    IQueryable<PurchaseInvoice> IAppDbContext.PurchaseInvoices => PurchaseInvoices.AsNoTracking();
+    IQueryable<PurchaseInvoiceItem> IAppDbContext.PurchaseInvoiceItems => PurchaseInvoiceItems.AsNoTracking();
+    IQueryable<ReturnInvoice> IAppDbContext.ReturnInvoices => ReturnInvoices.AsNoTracking();
+    IQueryable<ReturnInvoiceItem> IAppDbContext.ReturnInvoiceItems => ReturnInvoiceItems.AsNoTracking();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

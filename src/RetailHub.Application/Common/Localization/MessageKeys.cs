@@ -59,4 +59,30 @@ public static class MessageKeys
     public const string InsufficientStock = nameof(InsufficientStock);
     public const string InvoiceQuantity = nameof(InvoiceQuantity);
     public const string InvoiceProductId = nameof(InvoiceProductId);
+    // ── Customer ──
+    public const string CustomerName = nameof(CustomerName);
+    public const string CustomerPhone = nameof(CustomerPhone);
+    public const string CustomerNotFound = nameof(CustomerNotFound);
+    public const string CustomerPhoneExists = nameof(CustomerPhoneExists);
+
+    // ── Payment ──
+    public const string PaymentAmount = nameof(PaymentAmount);
+
+    // ── Supplier ──
+    public const string SupplierName = nameof(SupplierName);
+    public const string SupplierNotFound = nameof(SupplierNotFound);
+    public const string SupplierAlreadyExists = nameof(SupplierAlreadyExists);
+
+    // ── Purchase Invoice ──
+    public const string PurchaseInvoiceNotFound = nameof(PurchaseInvoiceNotFound);
+    public const string PurchaseItemsRequired = nameof(PurchaseItemsRequired);
+
+    // ── Return Invoice ──
+    public const string ReturnInvoiceNotFound = nameof(ReturnInvoiceNotFound);
+    public const string ReturnInvoiceItemNotFound = nameof(ReturnInvoiceItemNotFound);
+    public const string ReturnOriginalInvoice = nameof(ReturnOriginalInvoice);
+    public const string ReturnItemsRequired = nameof(ReturnItemsRequired);
+    public const string ReturnInvoiceItemId = nameof(ReturnInvoiceItemId);
+    public const string ReturnQuantity = nameof(ReturnQuantity);
+    public const string ReturnQuantityExceeded = nameof(ReturnQuantityExceeded);
 }

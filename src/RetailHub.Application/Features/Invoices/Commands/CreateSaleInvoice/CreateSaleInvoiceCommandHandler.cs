@@ -51,6 +51,15 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
             products[item.ProductId] = product;
         }
 
+        // ── 2b. Validate customer if provided ──
+        Domain.Entities.Customer? customer = null;
+        if (request.CustomerId.HasValue)
+        {
+            customer = await _unitOfWork.Customers.GetByIdAsync(request.CustomerId.Value, ct);
+            if (customer is null)
+                return Result<Guid>.Failure(_localizer[MessageKeys.CustomerNotFound]);
+        }
+
         // ── 3. Load FEFO batches and validate stock for all products ──
         var batchesByProduct = new Dictionary<Guid, List<Batch>>();
         foreach (var item in aggregatedItems)
@@ -139,7 +148,15 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
             _unitOfWork.Products.Update(product);
         }
 
-        // ── 8. Single atomic SaveChangesAsync ──
+        // ── 8. Update Customer.Balance for credit/partial sales ──
+        if (customer is not null && request.AmountPaid < totalAmount)
+        {
+            var unpaidAmount = totalAmount - request.AmountPaid;
+            customer.AdjustBalance(unpaidAmount);
+            _unitOfWork.Customers.Update(customer);
+        }
+
+        // ── 9. Single atomic SaveChangesAsync ──
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(invoice.Id);

@@ -13,7 +13,10 @@ public class Invoice : AuditableEntity
     public bool IsVoided { get; private set; }
 
     // Navigation
+    public Customer? Customer { get; private set; }
     public ICollection<InvoiceItem> Items { get; private set; } = [];
+    public ICollection<ReturnInvoice> ReturnInvoices { get; private set; } = [];
+    public ICollection<Payment> Payments { get; private set; } = [];
 
     private Invoice() { } // EF Core
 
