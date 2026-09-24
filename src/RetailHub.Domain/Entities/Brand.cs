@@ -4,7 +4,8 @@ namespace RetailHub.Domain.Entities;
 
 public class Brand : AuditableEntity
 {
-    public string Name { get; private set; } = string.Empty;
+    public string NameAr { get; private set; } = string.Empty;
+    public string? NameEn { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     // Navigation
@@ -12,14 +13,19 @@ public class Brand : AuditableEntity
 
     private Brand() { } // EF Core
 
-    public static Brand Create(string name)
+    public static Brand Create(string nameAr, string? nameEn = null)
     {
-        return new Brand { Name = name };
+        return new Brand
+        {
+            NameAr = nameAr,
+            NameEn = nameEn
+        };
     }
 
-    public void Update(string name)
+    public void Update(string nameAr, string? nameEn)
     {
-        Name = name;
+        NameAr = nameAr;
+        NameEn = nameEn;
     }
 
     public void Deactivate() => IsActive = false;

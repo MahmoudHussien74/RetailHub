@@ -5,7 +5,8 @@ namespace RetailHub.Domain.Entities;
 public class Product : AuditableEntity
 {
     public string Barcode { get; private set; } = string.Empty;
-    public string Name { get; private set; } = string.Empty;
+    public string NameAr { get; private set; } = string.Empty;
+    public string? NameEn { get; private set; }
     public Guid CategoryId { get; private set; }
     public Guid BrandId { get; private set; }
     public decimal SellingPrice { get; private set; }
@@ -16,12 +17,14 @@ public class Product : AuditableEntity
     public Category Category { get; private set; } = null!;
     public Brand Brand { get; private set; } = null!;
     public ICollection<Batch> Batches { get; private set; } = [];
+    public ICollection<InvoiceItem> InvoiceItems { get; private set; } = [];
 
     private Product() { } // EF Core
 
     public static Product Create(
         string barcode,
-        string name,
+        string nameAr,
+        string? nameEn,
         Guid categoryId,
         Guid brandId,
         decimal sellingPrice)
@@ -29,7 +32,8 @@ public class Product : AuditableEntity
         return new Product
         {
             Barcode = barcode,
-            Name = name,
+            NameAr = nameAr,
+            NameEn = nameEn,
             CategoryId = categoryId,
             BrandId = brandId,
             SellingPrice = sellingPrice,
@@ -37,9 +41,10 @@ public class Product : AuditableEntity
         };
     }
 
-    public void Update(string name, Guid categoryId, Guid brandId)
+    public void Update(string nameAr, string? nameEn, Guid categoryId, Guid brandId)
     {
-        Name = name;
+        NameAr = nameAr;
+        NameEn = nameEn;
         CategoryId = categoryId;
         BrandId = brandId;
     }

@@ -6,4 +6,5 @@ public interface IWarehouseRepository
 {
     Task<Warehouse?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Warehouse?> GetDefaultAsync(CancellationToken ct = default);
+    Task<bool> ExistsAsync(Guid id, CancellationToken ct = default);
 }

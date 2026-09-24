@@ -15,5 +15,12 @@ public interface IUnitOfWork : IDisposable
     ICategoryRepository Categories { get; }
     IBrandRepository Brands { get; }
     IWarehouseRepository Warehouses { get; }
+    IInvoiceRepository Invoices { get; }
+    ICustomerRepository Customers { get; }
+    IPaymentRepository Payments { get; }
+    ISupplierRepository Suppliers { get; }
+    IPurchaseInvoiceRepository PurchaseInvoices { get; }
+    IReturnInvoiceRepository ReturnInvoices { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
+

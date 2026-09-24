@@ -10,11 +10,17 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.HasKey(c => c.Id);
 
-        builder.Property(c => c.Name)
+        builder.Property(c => c.NameAr)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(150);
 
-        builder.Property(c => c.Description)
+        builder.Property(c => c.NameEn)
+            .HasMaxLength(150);
+
+        builder.Property(c => c.DescriptionAr)
+            .HasMaxLength(500);
+
+        builder.Property(c => c.DescriptionEn)
             .HasMaxLength(500);
     }
 }

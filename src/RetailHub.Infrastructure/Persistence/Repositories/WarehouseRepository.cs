@@ -15,4 +15,7 @@ public class WarehouseRepository : IWarehouseRepository
 
     public async Task<Warehouse?> GetDefaultAsync(CancellationToken ct = default) =>
         await _context.Warehouses.FirstOrDefaultAsync(w => w.IsDefault, ct);
+
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken ct = default) =>
+        await _context.Warehouses.AnyAsync(w => w.Id == id, ct);
 }

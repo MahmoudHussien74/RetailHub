@@ -7,5 +7,7 @@ public interface IBrandRepository
     Task<Brand?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task AddAsync(Brand brand, CancellationToken ct = default);
     void Update(Brand brand);
-    Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default);
+    Task<bool> ExistsAsync(Guid id, CancellationToken ct = default);
+    Task<bool> ExistsByNameAsync(string nameAr, CancellationToken ct = default);
+    Task<bool> ExistsByNameAsync(string nameAr, Guid excludeId, CancellationToken ct = default);
 }
