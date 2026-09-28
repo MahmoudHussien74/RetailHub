@@ -13,6 +13,10 @@ public class ReturnInvoiceItemConfiguration : IEntityTypeConfiguration<ReturnInv
         builder.Property(i => i.UnitPriceAtSale)
             .HasPrecision(18, 2);
 
+        builder.Property(i => i.DiscountPercentage)
+            .HasPrecision(5, 2);
+
+        builder.Ignore(i => i.NetUnitPrice);
         builder.Ignore(i => i.LineTotal);
 
         builder.HasOne(i => i.InvoiceItem)

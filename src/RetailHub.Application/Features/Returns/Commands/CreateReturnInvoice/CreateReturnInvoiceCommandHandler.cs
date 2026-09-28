@@ -128,6 +128,7 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                 batchId: originalItem.BatchId,
                 quantity: returnItem.Quantity,
                 unitPriceAtSale: originalItem.UnitPriceAtSale,
+                discountPercentage: originalItem.DiscountPercentage,
                 isDamaged: returnItem.IsDamaged);
 
             await _unitOfWork.ReturnInvoices.AddReturnItemAsync(returnInvoiceItem, ct);

@@ -16,15 +16,26 @@ public class ReturnInvoiceItem : AuditableEntity
     public decimal UnitPriceAtSale { get; private set; }
 
     /// <summary>
+    /// Snapshot of discount percentage from original InvoiceItem.
+    /// </summary>
+    public decimal DiscountPercentage { get; private set; }
+
+    /// <summary>
     /// If true, product is damaged and will NOT be returned to sellable stock.
     /// Recorded as StockMovement(Damage) instead of StockMovement(Return).
     /// </summary>
     public bool IsDamaged { get; private set; }
 
     /// <summary>
-    /// Computed line total: Quantity × UnitPriceAtSale.
+    /// Net unit price after discount: UnitPriceAtSale × (1 - DiscountPercentage / 100).
+    /// This is the actual refund amount per unit.
     /// </summary>
-    public decimal LineTotal => Quantity * UnitPriceAtSale;
+    public decimal NetUnitPrice => UnitPriceAtSale * (1m - (DiscountPercentage / 100m));
+
+    /// <summary>
+    /// Computed line total: Quantity × NetUnitPrice (refund at discounted price).
+    /// </summary>
+    public decimal LineTotal => Quantity * NetUnitPrice;
 
     // Navigation
     public ReturnInvoice ReturnInvoice { get; private set; } = null!;
@@ -41,6 +52,7 @@ public class ReturnInvoiceItem : AuditableEntity
         Guid batchId,
         int quantity,
         decimal unitPriceAtSale,
+        decimal discountPercentage,
         bool isDamaged)
     {
         if (quantity <= 0)
@@ -54,6 +66,7 @@ public class ReturnInvoiceItem : AuditableEntity
             BatchId = batchId,
             Quantity = quantity,
             UnitPriceAtSale = unitPriceAtSale,
+            DiscountPercentage = discountPercentage,
             IsDamaged = isDamaged
         };
     }

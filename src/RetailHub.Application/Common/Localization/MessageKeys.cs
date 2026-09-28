@@ -85,4 +85,18 @@ public static class MessageKeys
     public const string ReturnInvoiceItemId = nameof(ReturnInvoiceItemId);
     public const string ReturnQuantity = nameof(ReturnQuantity);
     public const string ReturnQuantityExceeded = nameof(ReturnQuantityExceeded);
+
+    // ── Employee ──
+    public const string EmployeeName = nameof(EmployeeName);
+    public const string EmployeeBaseSalary = nameof(EmployeeBaseSalary);
+    public const string EmployeeNotFound = nameof(EmployeeNotFound);
+
+    // ── Salary Advance ──
+    public const string AdvanceAmount = nameof(AdvanceAmount);
+    public const string AdvanceNotFound = nameof(AdvanceNotFound);
+    public const string AdvanceAlreadyDeducted = nameof(AdvanceAlreadyDeducted);
+
+    // ── Cash Drawer ──
+    public const string CashDrawerTransactionType = nameof(CashDrawerTransactionType);
+    public const string CashDrawerAmountNonZero = nameof(CashDrawerAmountNonZero);
 }

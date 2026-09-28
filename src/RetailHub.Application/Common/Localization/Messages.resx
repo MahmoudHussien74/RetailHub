@@ -111,4 +111,18 @@
   <data name="ReturnInvoiceItemId" xml:space="preserve"><value>Invoice Item ID</value></data>
   <data name="ReturnQuantity" xml:space="preserve"><value>Return Quantity</value></data>
   <data name="ReturnQuantityExceeded" xml:space="preserve"><value>Return quantity ({0}) exceeds remaining returnable quantity ({1}) for item '{2}'.</value></data>
+
+  <!-- ── Employee ── -->
+  <data name="EmployeeName" xml:space="preserve"><value>Employee Name</value></data>
+  <data name="EmployeeBaseSalary" xml:space="preserve"><value>Base Salary</value></data>
+  <data name="EmployeeNotFound" xml:space="preserve"><value>Employee not found.</value></data>
+
+  <!-- ── Salary Advance ── -->
+  <data name="AdvanceAmount" xml:space="preserve"><value>Advance Amount</value></data>
+  <data name="AdvanceNotFound" xml:space="preserve"><value>Salary advance not found.</value></data>
+  <data name="AdvanceAlreadyDeducted" xml:space="preserve"><value>This advance has already been deducted.</value></data>
+
+  <!-- ── Cash Drawer ── -->
+  <data name="CashDrawerTransactionType" xml:space="preserve"><value>Transaction Type</value></data>
+  <data name="CashDrawerAmountNonZero" xml:space="preserve"><value>Transaction amount cannot be zero.</value></data>
 </root>

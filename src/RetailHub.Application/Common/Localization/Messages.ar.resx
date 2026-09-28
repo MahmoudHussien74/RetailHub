@@ -111,4 +111,18 @@
   <data name="ReturnInvoiceItemId" xml:space="preserve"><value>معرف صنف الفاتورة</value></data>
   <data name="ReturnQuantity" xml:space="preserve"><value>كمية المرتجع</value></data>
   <data name="ReturnQuantityExceeded" xml:space="preserve"><value>كمية المرتجع ({0}) تتجاوز الكمية المتبقية القابلة للإرجاع ({1}) للصنف '{2}'.</value></data>
+
+  <!-- ── الموظفون ── -->
+  <data name="EmployeeName" xml:space="preserve"><value>اسم الموظف</value></data>
+  <data name="EmployeeBaseSalary" xml:space="preserve"><value>الراتب الأساسي</value></data>
+  <data name="EmployeeNotFound" xml:space="preserve"><value>الموظف غير موجود.</value></data>
+
+  <!-- ── السلف ── -->
+  <data name="AdvanceAmount" xml:space="preserve"><value>مبلغ السلفة</value></data>
+  <data name="AdvanceNotFound" xml:space="preserve"><value>السلفة غير موجودة.</value></data>
+  <data name="AdvanceAlreadyDeducted" xml:space="preserve"><value>تم خصم هذه السلفة بالفعل.</value></data>
+
+  <!-- ── الدرج النقدي ── -->
+  <data name="CashDrawerTransactionType" xml:space="preserve"><value>نوع المعاملة</value></data>
+  <data name="CashDrawerAmountNonZero" xml:space="preserve"><value>مبلغ المعاملة لا يمكن أن يكون صفراً.</value></data>
 </root>

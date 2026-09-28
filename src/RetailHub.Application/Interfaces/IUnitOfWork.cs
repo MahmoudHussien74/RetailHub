@@ -21,6 +21,9 @@ public interface IUnitOfWork : IDisposable
     ISupplierRepository Suppliers { get; }
     IPurchaseInvoiceRepository PurchaseInvoices { get; }
     IReturnInvoiceRepository ReturnInvoices { get; }
+    IEmployeeRepository Employees { get; }
+    ISalaryAdvanceRepository SalaryAdvances { get; }
+    ICashDrawerTransactionRepository CashDrawerTransactions { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 

@@ -16,7 +16,11 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
         builder.Property(ii => ii.UnitCostAtSale)
             .HasPrecision(18, 4); // Higher precision for cost calculations
 
-        // LineTotal is a computed property (not mapped to DB)
+        builder.Property(ii => ii.DiscountPercentage)
+            .HasPrecision(5, 2);
+
+        // Computed properties (not mapped to DB)
+        builder.Ignore(ii => ii.NetUnitPrice);
         builder.Ignore(ii => ii.LineTotal);
 
         builder.HasOne(ii => ii.Product)

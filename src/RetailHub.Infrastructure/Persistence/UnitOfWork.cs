@@ -24,6 +24,9 @@ public class UnitOfWork : IUnitOfWork
     private ISupplierRepository? _suppliers;
     private IPurchaseInvoiceRepository? _purchaseInvoices;
     private IReturnInvoiceRepository? _returnInvoices;
+    private IEmployeeRepository? _employees;
+    private ISalaryAdvanceRepository? _salaryAdvances;
+    private ICashDrawerTransactionRepository? _cashDrawerTransactions;
 
     public UnitOfWork(AppDbContext context) => _context = context;
 
@@ -62,6 +65,15 @@ public class UnitOfWork : IUnitOfWork
 
     public IReturnInvoiceRepository ReturnInvoices =>
         _returnInvoices ??= new ReturnInvoiceRepository(_context);
+
+    public IEmployeeRepository Employees =>
+        _employees ??= new EmployeeRepository(_context);
+
+    public ISalaryAdvanceRepository SalaryAdvances =>
+        _salaryAdvances ??= new SalaryAdvanceRepository(_context);
+
+    public ICashDrawerTransactionRepository CashDrawerTransactions =>
+        _cashDrawerTransactions ??= new CashDrawerTransactionRepository(_context);
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         _context.SaveChangesAsync(ct);

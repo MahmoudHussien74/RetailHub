@@ -25,5 +25,8 @@ public interface IAppDbContext
     IQueryable<PurchaseInvoiceItem> PurchaseInvoiceItems { get; }
     IQueryable<ReturnInvoice> ReturnInvoices { get; }
     IQueryable<ReturnInvoiceItem> ReturnInvoiceItems { get; }
+    IQueryable<Employee> Employees { get; }
+    IQueryable<SalaryAdvance> SalaryAdvances { get; }
+    IQueryable<CashDrawerTransaction> CashDrawerTransactions { get; }
 }
 
