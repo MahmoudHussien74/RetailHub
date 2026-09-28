@@ -27,3 +27,9 @@ Thumbs.db
 
 ## Agents & AI Config
 .agents/
+
+## Node & Frontend
+node_modules/
+dist/
+.angular/
+.npm/
