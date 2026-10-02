@@ -70,6 +70,12 @@ public class CreatePurchaseInvoiceCommandHandler
 
         foreach (var item in request.Items)
         {
+            var product = products[item.ProductId];
+            if (item.NewSellingPrice.HasValue && item.NewSellingPrice.Value > 0 && item.NewSellingPrice.Value != product.SellingPrice)
+            {
+                product.UpdateSellingPrice(item.NewSellingPrice.Value);
+            }
+
             // Create new Batch
             var batch = Batch.Create(
                 item.ProductId,

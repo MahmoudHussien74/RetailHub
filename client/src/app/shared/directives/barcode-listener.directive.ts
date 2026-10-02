@@ -14,9 +14,10 @@ export class BarcodeListenerDirective implements OnInit, OnDestroy {
 
   private buffer = '';
   private lastKeyTime = 0;
-  private readonly MAX_INTERVAL_MS = 50; // max ms between keystrokes for scanner
+  private readonly MAX_INTERVAL_MS = 60; // max ms between keystrokes for scanner
   private readonly MIN_LENGTH = 3;       // minimum barcode length
   private keyHandler!: (e: KeyboardEvent) => void;
+  private emitTimeout: any;
 
   ngOnInit(): void {
     this.keyHandler = (e: KeyboardEvent) => this.handleKeyPress(e);
@@ -25,6 +26,7 @@ export class BarcodeListenerDirective implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     document.removeEventListener('keydown', this.keyHandler);
+    clearTimeout(this.emitTimeout);
   }
 
   private handleKeyPress(event: KeyboardEvent): void {
@@ -38,6 +40,7 @@ export class BarcodeListenerDirective implements OnInit, OnDestroy {
     }
 
     if (event.key === 'Enter' || event.key === 'Tab') {
+      clearTimeout(this.emitTimeout);
       if (this.buffer.length >= this.MIN_LENGTH) {
         event.preventDefault();
         this.barcodeScanned.emit(this.buffer);
@@ -57,5 +60,14 @@ export class BarcodeListenerDirective implements OnInit, OnDestroy {
 
     this.buffer += event.key;
     this.lastKeyTime = now;
+
+    // Automatic fallback: if barcode scanner does not send Enter, auto-emit after 80ms
+    clearTimeout(this.emitTimeout);
+    this.emitTimeout = setTimeout(() => {
+      if (this.buffer.length >= this.MIN_LENGTH) {
+        this.barcodeScanned.emit(this.buffer);
+      }
+      this.buffer = '';
+    }, 80);
   }
 }

@@ -43,6 +43,7 @@ public class GetPurchaseInvoiceByIdQueryHandler
                     ProductNameEn = i.Product.NameEn,
                     Quantity = i.Quantity,
                     UnitCost = i.UnitCost,
+                    SellingPrice = i.Product.SellingPrice,
                     LineTotal = i.Quantity * i.UnitCost,
                     ExpiryDate = i.ExpiryDate,
                     BatchId = i.BatchId

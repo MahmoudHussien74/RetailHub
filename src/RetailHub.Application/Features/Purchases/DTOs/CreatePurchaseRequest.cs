@@ -16,4 +16,5 @@ public record PurchaseItemRequest(
     Guid ProductId,
     int Quantity,
     decimal UnitCost,
-    DateTime ExpiryDate);
+    DateTime ExpiryDate,
+    decimal? NewSellingPrice = null);

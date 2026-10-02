@@ -8,6 +8,7 @@ public class PurchaseInvoiceItemDto
     public string? ProductNameEn { get; init; }
     public int Quantity { get; init; }
     public decimal UnitCost { get; init; }
+    public decimal SellingPrice { get; init; }
     public decimal LineTotal { get; init; }
     public DateTime ExpiryDate { get; init; }
     public Guid BatchId { get; init; }

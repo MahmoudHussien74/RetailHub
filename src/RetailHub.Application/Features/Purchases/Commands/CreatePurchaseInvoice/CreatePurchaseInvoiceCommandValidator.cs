@@ -38,6 +38,13 @@ public class CreatePurchaseInvoiceCommandValidator : AbstractValidator<CreatePur
                     localizer[MessageKeys.MustNotBeNegative],
                     localizer[MessageKeys.BatchPurchasePrice]));
 
+            item.RuleFor(i => i.NewSellingPrice)
+                .GreaterThanOrEqualTo(0)
+                .When(i => i.NewSellingPrice.HasValue)
+                .WithMessage(_ => string.Format(
+                    localizer[MessageKeys.MustNotBeNegative],
+                    localizer[MessageKeys.ProductSellingPrice]));
+
             item.RuleFor(i => i.ExpiryDate)
                 .GreaterThan(DateTime.UtcNow)
                 .WithMessage(_ => localizer[MessageKeys.ExpiryDateMustBeFuture].Value);

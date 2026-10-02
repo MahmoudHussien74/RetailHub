@@ -48,6 +48,7 @@ export interface PurchaseInvoiceItemDto {
   productNameEn?: string;
   quantity: number;
   unitCost: number;
+  sellingPrice?: number;
   lineTotal: number;
   expiryDate: string;
   batchId: string;
@@ -64,5 +65,6 @@ export interface PurchaseItemRequest {
   productId: string;
   quantity: number;
   unitCost: number;
+  newSellingPrice?: number;
   expiryDate: string;
 }
