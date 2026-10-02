@@ -43,10 +43,16 @@ public class GetInvoicesQueryHandler
                 Id = i.Id,
                 InvoiceNumber = i.InvoiceNumber,
                 PaymentStatus = i.PaymentStatus.ToString(),
+                Subtotal = i.Subtotal,
+                DiscountPercent = i.DiscountPercent,
+                DiscountAmount = i.DiscountAmount,
                 TotalAmount = i.TotalAmount,
                 AmountPaid = i.AmountPaid,
                 ItemCount = i.Items.Count,
                 IsVoided = i.IsVoided,
+                HasReturns = i.ReturnInvoices.Any(),
+                TotalRefunded = i.ReturnInvoices.Sum(r => (decimal?)r.TotalRefundAmount) ?? 0m,
+                IsFullyReturned = !i.IsVoided && (i.ReturnInvoices.Sum(r => (decimal?)r.TotalRefundAmount) ?? 0m) >= i.TotalAmount && i.ReturnInvoices.Any(),
                 CreatedAt = i.CreatedAt
             })
             .ToListAsync(ct);

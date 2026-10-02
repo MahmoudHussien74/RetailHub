@@ -32,9 +32,17 @@ public class GetInvoiceByIdQueryHandler
                 InvoiceNumber = i.InvoiceNumber,
                 CustomerId = i.CustomerId,
                 PaymentStatus = i.PaymentStatus.ToString(),
+                Subtotal = i.Subtotal,
+                DiscountPercent = i.DiscountPercent,
+                DiscountAmount = i.DiscountAmount,
                 TotalAmount = i.TotalAmount,
                 AmountPaid = i.AmountPaid,
+                DiscountReason = i.DiscountReason,
+                DiscountedByUserId = i.DiscountedByUserId,
                 IsVoided = i.IsVoided,
+                HasReturns = i.ReturnInvoices.Any(),
+                TotalRefunded = i.ReturnInvoices.Sum(r => (decimal?)r.TotalRefundAmount) ?? 0m,
+                IsFullyReturned = !i.IsVoided && (i.ReturnInvoices.Sum(r => (decimal?)r.TotalRefundAmount) ?? 0m) >= i.TotalAmount && i.ReturnInvoices.Any(),
                 CreatedAt = i.CreatedAt,
                 Items = i.Items.Select(ii => new InvoiceItemDto
                 {
@@ -44,9 +52,16 @@ public class GetInvoiceByIdQueryHandler
                     ProductNameEn = ii.Product.NameEn,
                     BatchId = ii.BatchId,
                     Quantity = ii.Quantity,
+                    ReturnedQuantity = ii.ReturnItems.Sum(r => (int?)r.Quantity) ?? 0,
+                    UnitId = ii.UnitId,
+                    UnitName = ii.UnitName,
+                    ConversionFactor = ii.ConversionFactor,
+                    BaseQuantity = ii.BaseQuantity,
                     UnitPriceAtSale = ii.UnitPriceAtSale,
                     UnitCostAtSale = ii.UnitCostAtSale,
-                    LineTotal = ii.Quantity * ii.UnitPriceAtSale
+                    DiscountPercentage = ii.DiscountPercentage,
+                    DiscountAmount = ii.DiscountAmount,
+                    LineTotal = Math.Round((ii.Quantity * ii.UnitPriceAtSale) - ii.DiscountAmount, 2, MidpointRounding.AwayFromZero)
                 }).ToList()
             })
             .FirstOrDefaultAsync(ct);

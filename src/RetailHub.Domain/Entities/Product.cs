@@ -17,6 +17,7 @@ public class Product : AuditableEntity
     public Category Category { get; private set; } = null!;
     public Brand Brand { get; private set; } = null!;
     public ICollection<Batch> Batches { get; private set; } = [];
+    public ICollection<ProductUnit> Units { get; private set; } = [];
     public ICollection<InvoiceItem> InvoiceItems { get; private set; } = [];
 
     private Product() { } // EF Core
@@ -55,6 +56,14 @@ public class Product : AuditableEntity
             throw new ArgumentException("Selling price cannot be negative.", nameof(newPrice));
 
         SellingPrice = newPrice;
+    }
+
+    public void SetInitialCost(decimal cost)
+    {
+        if (cost < 0)
+            throw new ArgumentException("Cost price cannot be negative.", nameof(cost));
+
+        AverageCost = cost;
     }
 
     /// <summary>

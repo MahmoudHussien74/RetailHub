@@ -28,7 +28,11 @@ public class InvoicesController : ControllerBase
         var command = new CreateSaleInvoiceCommand(
             request.Items,
             request.AmountPaid,
-            request.CustomerId);
+            request.CustomerId,
+            request.DiscountPercent,
+            request.DiscountReason,
+            request.DiscountedByUserId,
+            request.IsManagerApproved);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -61,6 +65,26 @@ public class InvoicesController : ControllerBase
     {
         var result = await _mediator.Send(
             new GetInvoicesQuery(page, pageSize, status, fromDate, toDate, isVoided),
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
+            : BadRequest(new ApiResponse<object> { Success = false, Message = result.Error });
+    }
+
+    /// <summary>
+    /// Returns report of all discounted invoices (who, when, invoice, percent, amount).
+    /// </summary>
+    [HttpGet("discounts")]
+    public async Task<IActionResult> GetDiscounts(
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(
+            new RetailHub.Application.Features.Invoices.Queries.GetDiscountsReport.GetDiscountsReportQuery(fromDate, toDate, page, pageSize),
             cancellationToken);
 
         return result.IsSuccess

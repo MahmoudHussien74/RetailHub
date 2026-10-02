@@ -35,6 +35,10 @@ public class GetDailySummaryQueryHandler
             .Where(t => t.Amount < 0)
             .SumAsync(t => (decimal?)t.Amount, ct) ?? 0m;
 
+        var totalDiscounts = await _context.Invoices
+            .Where(i => !i.IsVoided && i.CreatedAt >= dateUtc && i.CreatedAt < nextDay && i.DiscountAmount > 0)
+            .SumAsync(i => (decimal?)i.DiscountAmount, ct) ?? 0m;
+
         var transactionCount = await todayTransactions.CountAsync(ct);
 
         var summary = new DailySummaryDto
@@ -44,6 +48,7 @@ public class GetDailySummaryQueryHandler
             TotalInflows = totalInflows,
             TotalOutflows = totalOutflows,
             ClosingBalance = openingBalance + totalInflows + totalOutflows,
+            TotalDiscounts = totalDiscounts,
             TransactionCount = transactionCount
         };
 

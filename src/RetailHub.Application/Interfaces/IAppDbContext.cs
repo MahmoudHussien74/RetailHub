@@ -28,5 +28,7 @@ public interface IAppDbContext
     IQueryable<Employee> Employees { get; }
     IQueryable<SalaryAdvance> SalaryAdvances { get; }
     IQueryable<CashDrawerTransaction> CashDrawerTransactions { get; }
+    IQueryable<ProductUnit> ProductUnits { get; }
+    IQueryable<Shift> Shifts { get; }
 }
 

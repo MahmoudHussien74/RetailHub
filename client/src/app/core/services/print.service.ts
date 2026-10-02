@@ -22,7 +22,10 @@ export class PrintService {
 
     const itemsRows = invoice.items.map(item => `
       <tr>
-        <td style="text-align:right;padding:2px 0">${item.productNameAr}</td>
+        <td style="text-align:right;padding:2px 0">
+          <div>${item.productNameAr}</div>
+          ${item.unitName ? `<span style="font-size:9px;color:#555">(${item.unitName})</span>` : ''}
+        </td>
         <td style="text-align:center;padding:2px 4px">${item.quantity}</td>
         <td style="text-align:left;padding:2px 0">${item.lineTotal.toFixed(2)}</td>
       </tr>
@@ -141,11 +144,17 @@ export class PrintService {
 
         <div class="total-section">
           <div class="row">
-            <span>المجموع:</span>
-            <span>${invoice.totalAmount.toFixed(2)} ج.م</span>
+            <span>المجموع الفرعي:</span>
+            <span>${(invoice.subtotal ?? invoice.totalAmount).toFixed(2)} ج.م</span>
           </div>
+          ${(invoice.discountAmount && invoice.discountAmount > 0) ? `
+          <div class="row" style="color:#dc2626;font-weight:bold">
+            <span>الخصم (${invoice.discountPercent || 0}%):</span>
+            <span>-${invoice.discountAmount.toFixed(2)} ج.م</span>
+          </div>
+          ` : ''}
           <div class="row grand-total">
-            <span>الإجمالي:</span>
+            <span>الصافي النهائي:</span>
             <span>${invoice.totalAmount.toFixed(2)} ج.م</span>
           </div>
           <div class="row">
@@ -169,6 +178,133 @@ export class PrintService {
       </body>
       </html>
     `;
+  }
+
+  /**
+   * Print a thermal receipt (80mm) for End of Shift / Cash Drawer Closing (Z-Report).
+   */
+  printShiftClosingReport(data: {
+    cashierName: string;
+    shiftDate: string;
+    openingBalance: number;
+    totalInflows: number;
+    totalOutflows: number;
+    expectedBalance: number;
+    actualBalance: number;
+    difference: number;
+    totalDiscounts?: number;
+    transactionCount: number;
+    notes?: string;
+  }): void {
+    const html = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Cairo', 'Tahoma', sans-serif;
+            font-size: 12px;
+            width: 80mm;
+            padding: 4mm;
+            color: #000;
+          }
+          .center { text-align: center; }
+          .divider { border-top: 1px dashed #000; margin: 6px 0; }
+          .double-divider { border-top: 2px solid #000; margin: 6px 0; }
+          .title { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+          .sub { font-size: 11px; color: #555; }
+          .row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; }
+          .bold-row { font-weight: bold; font-size: 13px; }
+          .status { font-weight: bold; padding: 4px; text-align: center; margin: 6px 0; border: 1px solid #000; }
+        </style>
+      </head>
+      <body>
+        <div class="center">
+          <div class="title">RetailHub Pharmacy</div>
+          <div class="sub">نظام إدارة الصيدلية ونقاط البيع</div>
+          <div class="divider"></div>
+          <h3 style="font-size:14px;font-weight:bold">تقرير إغلاق الوردية (Z-Report)</h3>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <span>الكاشير:</span>
+          <span><b>${data.cashierName}</b></span>
+        </div>
+        <div class="row">
+          <span>تاريخ الوردية:</span>
+          <span>${data.shiftDate}</span>
+        </div>
+        <div class="row">
+          <span>وقت الإغلاق:</span>
+          <span>${new Date().toLocaleTimeString('ar-EG')}</span>
+        </div>
+        <div class="row">
+          <span>عدد الحركات:</span>
+          <span>${data.transactionCount} حركة</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <span>الرصيد الافتتاحي:</span>
+          <span>${data.openingBalance.toFixed(2)} ج.م</span>
+        </div>
+        <div class="row" style="color:#059669">
+          <span>المقبوضات (مبيعات صافية داخل):</span>
+          <span>+${data.totalInflows.toFixed(2)} ج.م</span>
+        </div>
+        <div class="row" style="color:#dc2626">
+          <span>المدفوعات (مصروفات/شراء خارج):</span>
+          <span>-${Math.abs(data.totalOutflows).toFixed(2)} ج.م</span>
+        </div>
+        <div class="row" style="color:#d97706">
+          <span>إجمالي الخصومات الممنوحة:</span>
+          <span>${(data.totalDiscounts || 0).toFixed(2)} ج.م</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row bold-row">
+          <span>الرصيد المتوقع بالدرج:</span>
+          <span>${data.expectedBalance.toFixed(2)} ج.م</span>
+        </div>
+        <div class="row bold-row" style="font-size:14px">
+          <span>النقدية الفعلية المحصية:</span>
+          <span>${data.actualBalance.toFixed(2)} ج.م</span>
+        </div>
+
+        <div class="double-divider"></div>
+
+        <div class="row bold-row" style="color:${data.difference === 0 ? '#059669' : (data.difference < 0 ? '#dc2626' : '#d97706')}">
+          <span>الفارق (عجز / زيادة):</span>
+          <span>${data.difference < 0 ? '−' : (data.difference > 0 ? '+' : '')}${Math.abs(data.difference).toFixed(2)} ج.م ${data.difference < 0 ? 'عجز' : (data.difference > 0 ? 'زيادة' : 'مطابق')}</span>
+        </div>
+
+        <div class="status" style="background:${data.difference === 0 ? '#d1fae5' : (data.difference < 0 ? '#fee2e2' : '#fef3c7')}; color:${data.difference === 0 ? '#065f46' : (data.difference < 0 ? '#991b1b' : '#92400e')}">
+          ${data.difference === 0 ? '✅ مطابقة تامة — لا يوجد عجز أو زيادة' : (data.difference < 0 ? `⚠️ عجز في العهدة: −${Math.abs(data.difference).toFixed(2)} ج.م عجز` : `ℹ️ زيادة بالدرج: +${data.difference.toFixed(2)} ج.م زيادة`)}
+        </div>
+
+        ${data.notes ? `
+        <div class="row" style="font-size:10px;color:#555">
+          <span>ملاحظات:</span>
+          <span>${data.notes}</span>
+        </div>
+        ` : ''}
+
+        <div class="divider"></div>
+        <div class="center sub" style="margin-top:8px">
+          <p>توقيع الصيدلي / الكاشير: ........................</p>
+          <p style="margin-top:4px">توقيع المستلم / الإدارة: ........................</p>
+        </div>
+      </body>
+      </html>
+    `;
+    this.printHtml(html);
   }
 
   private printHtml(html: string): void {

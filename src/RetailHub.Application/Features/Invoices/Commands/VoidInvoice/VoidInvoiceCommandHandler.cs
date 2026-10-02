@@ -39,26 +39,28 @@ public class VoidInvoiceCommandHandler : IRequestHandler<VoidInvoiceCommand, Res
 
         foreach (var item in invoice.Items)
         {
-            // Load the batch to restore quantity
-            var batches = await _unitOfWork.Batches
-                .GetAvailableBatchesByProductIdAsync(item.ProductId, ct);
-
             // Find the specific batch (may have zero quantity now)
             var allBatches = await _unitOfWork.Batches
                 .GetByProductIdOrderedByExpiryAsync(item.ProductId, ct);
 
             var batch = allBatches.FirstOrDefault(b => b.Id == item.BatchId);
+
+            // Base quantity to restore (accounting for unit conversion)
+            var baseQtyToRestore = item.BaseQuantity > 0
+                ? item.BaseQuantity
+                : item.Quantity * (item.ConversionFactor > 0 ? item.ConversionFactor : 1);
+
             if (batch is not null)
             {
-                // Restore quantity to original batch
-                batch.AddQuantity(item.Quantity);
+                // Restore quantity to original batch in base units
+                batch.AddQuantity(baseQtyToRestore);
 
                 // Create reversal stock movement
                 var reversalMovement = StockMovement.Create(
                     item.ProductId,
                     item.BatchId,
                     StockMovementType.Return,
-                    item.Quantity,
+                    baseQtyToRestore,
                     referenceId: invoice.Id);
 
                 await _unitOfWork.StockMovements.AddAsync(reversalMovement, ct);
@@ -71,7 +73,34 @@ public class VoidInvoiceCommandHandler : IRequestHandler<VoidInvoiceCommand, Res
         invoice.Void();
         _unitOfWork.Invoices.Update(invoice);
 
-        // 4. Recalculate AverageCost for all affected products
+        // 4. Refund Cash Drawer if amount was paid
+        if (invoice.AmountPaid > 0)
+        {
+            var cashTransaction = CashDrawerTransaction.Create(
+                CashDrawerTransactionType.Return,
+                -invoice.AmountPaid,
+                referenceId: invoice.Id,
+                notes: $"إلغاء فاتورة بيع رقم {invoice.InvoiceNumber}");
+
+            await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
+        }
+
+        // 5. Reverse Customer debt if sale was on credit / partial payment
+        if (invoice.CustomerId.HasValue)
+        {
+            var unpaidAmount = invoice.TotalAmount - invoice.AmountPaid;
+            if (unpaidAmount > 0)
+            {
+                var customer = await _unitOfWork.Customers.GetByIdAsync(invoice.CustomerId.Value, ct);
+                if (customer is not null)
+                {
+                    customer.AdjustBalance(-unpaidAmount);
+                    _unitOfWork.Customers.Update(customer);
+                }
+            }
+        }
+
+        // 6. Recalculate AverageCost for all affected products
         foreach (var productId in affectedProductIds)
         {
             var product = await _unitOfWork.Products.GetByIdAsync(productId, ct);
@@ -85,7 +114,7 @@ public class VoidInvoiceCommandHandler : IRequestHandler<VoidInvoiceCommand, Res
             }
         }
 
-        // 5. Single atomic SaveChangesAsync
+        // 7. Single atomic SaveChangesAsync
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success();

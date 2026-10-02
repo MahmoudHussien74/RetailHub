@@ -55,6 +55,25 @@ public class SalaryAdvancesController : ControllerBase
     }
 
     /// <summary>
+    /// Returns paginated salary advances, optionally filtered by employee.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] Guid? employeeId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(
+            new GetAdvancesByEmployeeQuery(employeeId, page, pageSize),
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
+            : BadRequest(new ApiResponse<object> { Success = false, Message = result.Error });
+    }
+
+    /// <summary>
     /// Returns paginated salary advances for an employee.
     /// </summary>
     [HttpGet("employee/{employeeId:guid}")]

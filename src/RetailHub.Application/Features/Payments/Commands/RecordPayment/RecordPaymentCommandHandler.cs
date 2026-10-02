@@ -4,6 +4,7 @@ using RetailHub.Application.Common;
 using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Interfaces;
 using RetailHub.Domain.Entities;
+using RetailHub.Domain.Enums;
 
 namespace RetailHub.Application.Features.Payments.Commands.RecordPayment;
 
@@ -56,6 +57,18 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
         // 4. Decrease customer balance
         customer.AdjustBalance(-request.Amount);
         _unitOfWork.Customers.Update(customer);
+
+        // 4b. Record cash inflow in CashDrawer
+        if (request.Amount > 0)
+        {
+            var cashTransaction = CashDrawerTransaction.Create(
+                CashDrawerTransactionType.Sale,
+                request.Amount,
+                referenceId: payment.Id,
+                notes: $"تحصيل دفعة من العميل: {customer.Name}");
+
+            await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
+        }
 
         // 5. Atomic save
         await _unitOfWork.SaveChangesAsync(ct);

@@ -8,7 +8,27 @@ public class ReturnInvoiceItem : AuditableEntity
     public Guid InvoiceItemId { get; private set; }
     public Guid ProductId { get; private set; }
     public Guid BatchId { get; private set; }
+
+    /// <summary>
+    /// Quantity returned in the original sale unit.
+    /// </summary>
     public int Quantity { get; private set; }
+
+    /// <summary>
+    /// Snapshot of unit name from the original InvoiceItem.
+    /// </summary>
+    public string UnitName { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Snapshot of ConversionFactor from the original InvoiceItem.
+    /// </summary>
+    public int ConversionFactor { get; private set; } = 1;
+
+    /// <summary>
+    /// Total base units returned = Quantity × ConversionFactor.
+    /// This is what gets added back to batch stock.
+    /// </summary>
+    public int BaseQuantity { get; private set; }
 
     /// <summary>
     /// Snapshot from original InvoiceItem — immutable.
@@ -53,10 +73,15 @@ public class ReturnInvoiceItem : AuditableEntity
         int quantity,
         decimal unitPriceAtSale,
         decimal discountPercentage,
-        bool isDamaged)
+        bool isDamaged,
+        string unitName = "وحدة",
+        int conversionFactor = 1)
     {
         if (quantity <= 0)
             throw new ArgumentException("Return quantity must be positive.", nameof(quantity));
+
+        if (conversionFactor <= 0)
+            throw new ArgumentException("Conversion factor must be positive.", nameof(conversionFactor));
 
         return new ReturnInvoiceItem
         {
@@ -65,6 +90,9 @@ public class ReturnInvoiceItem : AuditableEntity
             ProductId = productId,
             BatchId = batchId,
             Quantity = quantity,
+            UnitName = unitName,
+            ConversionFactor = conversionFactor,
+            BaseQuantity = quantity * conversionFactor,
             UnitPriceAtSale = unitPriceAtSale,
             DiscountPercentage = discountPercentage,
             IsDamaged = isDamaged

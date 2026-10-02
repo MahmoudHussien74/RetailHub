@@ -24,6 +24,8 @@ public interface IUnitOfWork : IDisposable
     IEmployeeRepository Employees { get; }
     ISalaryAdvanceRepository SalaryAdvances { get; }
     ICashDrawerTransactionRepository CashDrawerTransactions { get; }
+    IProductUnitRepository ProductUnits { get; }
+    IShiftRepository Shifts { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 

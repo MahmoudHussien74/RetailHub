@@ -11,5 +11,6 @@ public class DailySummaryDto
     public decimal TotalInflows { get; init; }
     public decimal TotalOutflows { get; init; }
     public decimal ClosingBalance { get; init; }
+    public decimal TotalDiscounts { get; init; }
     public int TransactionCount { get; init; }
 }

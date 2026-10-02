@@ -20,8 +20,29 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .IsRequired()
             .HasMaxLength(20);
 
+        builder.Property(i => i.Subtotal)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
+        builder.Property(i => i.DiscountPercent)
+            .HasPrecision(5, 2)
+            .HasDefaultValue(0m);
+
+        builder.Property(i => i.DiscountAmount)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
         builder.Property(i => i.TotalAmount)
             .HasPrecision(18, 2);
+
+        builder.Ignore(i => i.Total);
+
+        builder.Property(i => i.DiscountReason)
+            .HasMaxLength(250)
+            .IsRequired(false);
+
+        builder.Property(i => i.DiscountedByUserId)
+            .IsRequired(false);
 
         builder.Property(i => i.AmountPaid)
             .HasPrecision(18, 2);

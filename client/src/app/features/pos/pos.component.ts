@@ -6,116 +6,96 @@ import { InvoicesService } from '../../core/services/invoices.service';
 import { CustomersService } from '../../core/services/customers.service';
 import { PrintService } from '../../core/services/print.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { CartStore } from '../../core/stores/cart.store';
-import { ProductListDto } from '../../core/models/product.model';
+import { CartStore, CartItem } from '../../core/stores/cart.store';
+import { ProductListDto, ProductUnitDto, CreateProductUnitRequest } from '../../core/models/product.model';
 import { CustomerListDto } from '../../core/models/customer.model';
 import { CreateSaleRequest } from '../../core/models/invoice.model';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { BarcodeListenerDirective } from '../../shared/directives/barcode-listener.directive';
 import { CategoryDto, BrandDto } from '../../core/models/category-brand.model';
 import { ApiService } from '../../core/services/api.service';
+import { ProductListComponent } from './components/product-list/product-list.component';
+import { AddToCartEvent } from './components/product-row/product-row.component';
+import { CategoryComboboxComponent } from './components/category-combobox/category-combobox.component';
 
 @Component({
   selector: 'app-pos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent, BarcodeListenerDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ConfirmDialogComponent,
+    BarcodeListenerDirective,
+    ProductListComponent,
+    CategoryComboboxComponent
+  ],
   template: `
     <div class="h-[calc(100vh-130px)] flex flex-col lg:flex-row gap-5"
       appBarcodeListener
       (barcodeScanned)="onBarcodeScanned($event)">
 
       <!-- ██ LEFT PANEL: Products & Search ██ -->
-      <div class="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden min-h-0">
 
-        <!-- Search & Category Filters -->
-        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3 bg-slate-50/50">
+        <!-- Search & Category Filters: Single Top Bar -->
+        <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 flex items-center gap-2.5">
+          <!-- Large Search Input with Autofocus -->
           <div class="relative flex-1">
             <input
               #searchInput
               type="text"
-              [(ngModel)]="searchQuery"
+              [ngModel]="searchQuery()"
               (ngModelChange)="onSearchChange($event)"
               (keydown.enter)="onSearchEnter()"
-              placeholder="امسح الباركود أو ابحث عن المنتج بالاسم..."
-              class="barcode-search w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+              placeholder="امسح الباركود أو ابحث عن الصنف بالاسم..."
+              class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 ps-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 dark:text-slate-100"
               autofocus
             />
-            <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 text-slate-400 absolute start-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
-          </div>
-
-          <div class="flex gap-2 flex-wrap">
-            <button
-              (click)="selectedCategory.set(null); loadProducts()"
-              class="px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-              [class]="selectedCategory() === null
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'">
-              جميع الأصناف
-            </button>
-            @for (cat of categories(); track cat.id) {
-              <button
-                (click)="selectedCategory.set(cat.id); loadProducts()"
-                class="px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-                [class]="selectedCategory() === cat.id
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'">
-                {{ cat.nameAr }}
+            @if (searchQuery().trim()) {
+              <button (click)="clearSearch()" class="absolute end-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">
+                ✕
               </button>
             }
           </div>
+
+          <!-- Category Select Combobox with Search -->
+          <div class="w-48 sm:w-64 flex-shrink-0">
+            <app-category-combobox
+              [categories]="categories()"
+              [selectedCategory]="selectedCategory()"
+              (categoryChange)="onCategoryChange($event)"
+            />
+          </div>
+
+          <!-- Clear All Filters Button -->
+          @if (searchQuery().trim() || selectedCategory() !== null) {
+            <button
+              type="button"
+              (click)="clearFilters()"
+              class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-300 transition-colors flex-shrink-0"
+              title="مسح البحث والفلترة"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          }
         </div>
 
-        <!-- Products Grid -->
-        <div class="flex-1 overflow-y-auto p-4">
-          @if (isLoadingProducts()) {
-            <!-- Skeleton Loader -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              @for (i of [1,2,3,4,5,6,7,8]; track i) {
-                <div class="p-3.5 rounded-xl border border-slate-200 bg-white animate-pulse">
-                  <div class="h-3 bg-slate-200 rounded w-20 mb-2"></div>
-                  <div class="h-4 bg-slate-200 rounded w-full mb-1"></div>
-                  <div class="h-4 bg-slate-200 rounded w-3/4 mb-4"></div>
-                  <div class="flex justify-between pt-2 border-t border-slate-100">
-                    <div class="h-3 bg-slate-200 rounded w-14"></div>
-                    <div class="h-4 bg-slate-200 rounded w-16"></div>
-                  </div>
-                </div>
-              }
-            </div>
-          } @else if (products().length === 0) {
-            <!-- Empty State -->
-            <div class="h-full flex flex-col items-center justify-center text-slate-400 p-8">
-              <svg class="w-16 h-16 text-slate-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-              <p class="text-sm font-bold text-slate-500">لا توجد منتجات</p>
-              <p class="text-xs text-slate-400 mt-1">حاول تغيير البحث أو التصنيف</p>
-            </div>
-          } @else {
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              @for (prod of products(); track prod.id) {
-                <button
-                  (click)="addProductToCart(prod)"
-                  [disabled]="prod.totalStock <= 0"
-                  class="flex flex-col justify-between p-3.5 rounded-xl border transition-all text-right group"
-                  [class]="prod.totalStock <= 0
-                    ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
-                    : 'border-slate-200 hover:border-emerald-500 hover:shadow-md bg-white hover:bg-emerald-50/30'">
-                  <div>
-                    <span class="text-[10px] font-bold text-slate-400 font-mono">{{ prod.barcode }}</span>
-                    <h4 class="font-bold text-sm text-slate-800 line-clamp-2 mt-0.5 group-hover:text-emerald-700">{{ prod.nameAr }}</h4>
-                  </div>
-                  <div class="mt-4 flex items-center justify-between pt-2 border-t border-slate-100">
-                    <span class="text-xs font-semibold"
-                      [class]="prod.totalStock <= 3 ? 'text-rose-500' : 'text-slate-400'">
-                      متبقي: {{ prod.totalStock }}
-                    </span>
-                    <span class="font-black text-sm text-emerald-600">{{ prod.sellingPrice | number:'1.2-2' }} ج.م</span>
-                  </div>
-                </button>
-              }
-            </div>
-          }
+        <!-- Products List Area -->
+        <div class="flex-1 overflow-hidden p-3 min-h-0">
+          <app-product-list
+            [products]="products()"
+            [isLoading]="isLoadingProducts()"
+            [hasError]="hasProductsError()"
+            [isInitialState]="isInitialState()"
+            [cartQuantities]="cartQuantitiesMap()"
+            (addToCart)="onProductAddToCart($event)"
+            (retry)="loadProducts()"
+          />
         </div>
       </div>
 
@@ -181,31 +161,91 @@ import { ApiService } from '../../core/services/api.service';
             </div>
           } @else {
             @for (item of cart.items(); track item.productId) {
-              <div class="flex items-center justify-between p-2.5 rounded-xl border"
-                [class]="item.hasError ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-100'">
-                <div class="flex-1 min-w-0 pr-1">
-                  <h5 class="text-xs font-bold text-slate-800 truncate">{{ item.nameAr }}</h5>
-                  <span class="text-[11px] font-semibold"
-                    [class]="item.hasError ? 'text-rose-500' : 'text-slate-400'">
-                    {{ item.sellingPrice | number:'1.2-2' }} × {{ item.quantity }} = {{ (item.sellingPrice * item.quantity) | number:'1.2-2' }} ج.م
-                  </span>
-                  @if (item.hasError) {
-                    <p class="text-[10px] text-rose-600 font-bold mt-0.5">⚠ الكمية المتاحة: {{ item.maxAvailable }} فقط</p>
-                  }
+              <div class="p-2.5 rounded-xl border flex flex-col gap-1.5 transition-all"
+                [class]="item.hasError || cart.isStockExceeded(item) ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-100'">
+                <div class="flex items-start justify-between gap-1">
+                  <div class="flex-1 min-w-0 pr-1">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h5 class="text-xs font-bold text-slate-800 truncate">{{ item.nameAr }}</h5>
+                      <button (click)="openItemDetailsModal(item)"
+                        class="px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition-all flex items-center gap-0.5 flex-shrink-0"
+                        title="تفاصيل الصنف: سعر الشراء والبيع والوحدات">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>تفاصيل</span>
+                      </button>
+                    </div>
+
+                    <!-- Price Info: Purchase vs Sale -->
+                    <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span class="text-[11px] font-bold text-slate-700">
+                        {{ item.sellingPrice | number:'1.2-2' }} ج.م
+                        @if (item.unitName) {
+                          <span class="text-[10px] text-slate-400 font-medium">/ {{ item.unitName }}</span>
+                        }
+                      </span>
+                      <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="سعر الشراء / التكلفة">
+                        شراء: {{ (item.unitCostPrice || item.costPrice || 0) | number:'1.2-2' }} ج.م
+                      </span>
+                      <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200" title="إجمالي السعر">
+                        = {{ (item.sellingPrice * item.quantity) | number:'1.2-2' }} ج.م
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Quantity Controls with direct editable input -->
+                  <div class="flex items-center gap-1 flex-shrink-0 pt-0.5">
+                    <button (click)="cart.decreaseQty(item.productId)" class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 flex items-center justify-center text-xs">
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      [ngModel]="item.quantity"
+                      (ngModelChange)="cart.updateQuantity(item.productId, $event)"
+                      min="1"
+                      class="w-10 h-6 text-center font-bold text-xs text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <button (click)="cart.increaseQty(item.productId)" class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 flex items-center justify-center text-xs">
+                      +
+                    </button>
+                    <button (click)="cart.removeItem(item.productId)" class="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 flex items-center justify-center text-xs mr-0.5" title="حذف">
+                      ✕
+                    </button>
+                  </div>
                 </div>
 
-                <div class="flex items-center gap-1.5 flex-shrink-0">
-                  <button (click)="cart.decreaseQty(item.productId)" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 flex items-center justify-center text-xs">
-                    -
-                  </button>
-                  <span class="w-7 text-center font-bold text-xs text-slate-800">{{ item.quantity }}</span>
-                  <button (click)="cart.increaseQty(item.productId)" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 flex items-center justify-center text-xs">
-                    +
-                  </button>
-                  <button (click)="cart.removeItem(item.productId)" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 flex items-center justify-center text-xs mr-1">
-                    ✕
+                <!-- Unit Chips & Quick Add Unit -->
+                <div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
+                  <span class="text-[10px] text-slate-500 font-bold">الوحدة:</span>
+                  @if (item.units && item.units.length > 0) {
+                    @for (u of item.units; track u.id) {
+                      <button
+                        type="button"
+                        (click)="cart.changeUnit(item.productId, u)"
+                        [class]="item.unitId === u.id
+                          ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 font-medium'"
+                        class="text-[10px] px-2 py-0.5 rounded-lg transition-all">
+                        {{ u.name }} ({{ u.salePrice | number:'1.2-2' }} ج.م)
+                      </button>
+                    }
+                  }
+                  <button
+                    type="button"
+                    (click)="openAddUnitModal(item)"
+                    class="text-[10px] px-1.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-bold transition-all flex items-center gap-0.5"
+                    title="إضافة وحدة جديدة للصنف (شريط/قرص)">
+                    <span>+ وحدة</span>
                   </button>
                 </div>
+
+                <!-- Stock Warnings -->
+                @if (cart.isStockExceeded(item)) {
+                  <p class="text-[10px] text-rose-600 font-bold">
+                    ⚠️ الكمية المطلوبة ({{ item.quantity * (item.conversionFactor || 1) }}) تتجاوز المخزون ({{ item.availableStock }})
+                  </p>
+                } @else if (item.hasError) {
+                  <p class="text-[10px] text-rose-600 font-bold">⚠ الكمية المتاحة: {{ item.maxAvailable }} فقط</p>
+                }
               </div>
             }
           }
@@ -214,18 +254,40 @@ import { ApiService } from '../../core/services/api.service';
         <!-- Cart Summary & Checkout -->
         <div class="p-4 border-t border-slate-100 bg-slate-50/70 space-y-3">
           <!-- Discount -->
-          <div class="flex items-center gap-2">
-            <label class="text-xs text-slate-500 font-semibold whitespace-nowrap">خصم %</label>
-            <input
-              type="number"
-              [ngModel]="cart.discountPercent()"
-              (ngModelChange)="cart.setDiscount($event)"
-              min="0" max="100"
-              class="w-16 text-center text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            />
-            <span class="text-xs text-slate-400 flex-1 text-left font-semibold">
-              - {{ cart.discountAmount() | number:'1.2-2' }} ج.م
-            </span>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <label class="text-xs text-slate-500 font-semibold whitespace-nowrap">خصم %</label>
+              <input
+                type="number"
+                [ngModel]="cart.discountPercent()"
+                (ngModelChange)="cart.setDiscount($event)"
+                min="0" max="100"
+                class="w-16 text-center text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              <span class="text-xs text-slate-400 flex-1 text-left font-semibold">
+                - {{ cart.discountAmount() | number:'1.2-2' }} ج.م
+              </span>
+            </div>
+
+            @if (cart.discountPercent() > 0) {
+              <input
+                type="text"
+                [ngModel]="cart.discountReason()"
+                (ngModelChange)="cart.setDiscountReason($event)"
+                placeholder="سبب الخصم (اختياري)..."
+                class="w-full text-[11px] bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+              />
+            }
+
+            @if (cart.discountPercent() > 10) {
+              <div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px] flex items-center justify-between gap-2">
+                <span class="font-bold">⚠️ يتطلب إذن المدير (>10%)</span>
+                <label class="flex items-center gap-1 font-bold text-amber-900 cursor-pointer">
+                  <input type="checkbox" [(ngModel)]="isManagerApproved" class="rounded text-amber-600 focus:ring-0">
+                  <span>موافقة المدير</span>
+                </label>
+              </div>
+            }
           </div>
 
           <div class="space-y-1.5 text-xs text-slate-600 font-medium">
@@ -341,6 +403,166 @@ import { ApiService } from '../../core/services/api.service';
       </div>
     }
 
+    <!-- Item Details & Unit Selector Modal -->
+    @if (selectedCartItem()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="selectedCartItem.set(null)">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-scale-in" (click)="$event.stopPropagation()">
+          <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-white">تفاصيل الصنف والوحدات</h3>
+              <p class="text-xs text-slate-300 mt-0.5">{{ selectedCartItem()!.nameAr }} ({{ selectedCartItem()!.barcode }})</p>
+            </div>
+            <button (click)="selectedCartItem.set(null)" class="text-slate-400 hover:text-white transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+            <!-- Financial & Stock Summary Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <span class="text-[11px] font-bold text-amber-700 block">سعر الشراء (التكلفة)</span>
+                <p class="text-base font-black text-amber-900 mt-0.5">
+                  {{ (selectedCartItem()!.unitCostPrice || selectedCartItem()!.costPrice || 0) | number:'1.2-2' }}
+                  <span class="text-[10px] font-normal text-amber-700">ج.م</span>
+                </p>
+                <span class="text-[10px] text-amber-600 block mt-0.5 font-medium">لكل {{ selectedCartItem()!.unitName || 'وحدة' }}</span>
+              </div>
+
+              <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                <span class="text-[11px] font-bold text-emerald-700 block">سعر البيع الحالي</span>
+                <p class="text-base font-black text-emerald-900 mt-0.5">
+                  {{ selectedCartItem()!.sellingPrice | number:'1.2-2' }}
+                  <span class="text-[10px] font-normal text-emerald-700">ج.م</span>
+                </p>
+                <span class="text-[10px] text-emerald-600 block mt-0.5 font-medium">لكل {{ selectedCartItem()!.unitName || 'وحدة' }}</span>
+              </div>
+
+              <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                <span class="text-[11px] font-bold text-indigo-700 block">الربح للوحدة</span>
+                <p class="text-base font-black text-indigo-900 mt-0.5">
+                  {{ (selectedCartItem()!.sellingPrice - (selectedCartItem()!.unitCostPrice || selectedCartItem()!.costPrice || 0)) | number:'1.2-2' }}
+                  <span class="text-[10px] font-normal text-indigo-700">ج.م</span>
+                </p>
+                <span class="text-[10px] text-indigo-600 block mt-0.5 font-bold">
+                  {{ getItemProfitMargin(selectedCartItem()!) }}%
+                </span>
+              </div>
+
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <span class="text-[11px] font-bold text-slate-600 block">المخزون المتاح</span>
+                <p class="text-sm font-black text-slate-800 mt-0.5">
+                  {{ selectedCartItem()!.stockDisplay || (selectedCartItem()!.availableStock + ' وحدة') }}
+                </p>
+                <span class="text-[10px] text-slate-500 block mt-0.5">إجمالي الرصيد</span>
+              </div>
+            </div>
+
+            <!-- Unit Selection Section -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-black text-slate-700">اختر وحدة البيع المطلوبة:</label>
+                <button (click)="showQuickAddUnit.set(!showQuickAddUnit())"
+                  class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                  <span>{{ showQuickAddUnit() ? 'إلغاء' : '+ إضافة وحدة جديدة (شريط/قرص)' }}</span>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                @for (u of (selectedCartItem()!.units || []); track u.id) {
+                  <div
+                    (click)="selectUnitInModal(u)"
+                    class="p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between"
+                    [class]="selectedCartItem()!.unitId === u.id
+                      ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20 shadow-sm'
+                      : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        @if (selectedCartItem()!.unitId === u.id) {
+                          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                        }
+                        {{ u.name }}
+                      </span>
+                      <span class="text-xs font-black text-emerald-700">{{ u.salePrice | number:'1.2-2' }} ج.م</span>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                      <span>معامل: {{ u.conversionFactor }} وحدة</span>
+                      <span class="text-amber-700 font-semibold">تكلفة: {{ (selectedCartItem()!.costPrice * u.conversionFactor) | number:'1.2-2' }} ج.م</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Quick Add Unit Form inside Details Modal -->
+            @if (showQuickAddUnit()) {
+              <div class="p-3.5 bg-indigo-50/60 border border-indigo-200 rounded-xl space-y-3">
+                <h5 class="text-xs font-bold text-indigo-900">إضافة وحدة جديدة للصنف فوراً</h5>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-0.5">اسم الوحدة</label>
+                    <input type="text" [(ngModel)]="quickUnitName" placeholder="شريط / قرص"
+                      class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"/>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-0.5">معامل التحويل</label>
+                    <input type="number" [(ngModel)]="quickUnitFactor" min="1" placeholder="مثلاً: 10"
+                      class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"/>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-0.5">سعر البيع (ج.م)</label>
+                    <input type="number" [(ngModel)]="quickUnitPrice" min="0" placeholder="مثلاً: 25.00"
+                      class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"/>
+                  </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                  <button (click)="showQuickAddUnit.set(false)" class="px-3 py-1 text-xs text-slate-600 hover:text-slate-800">إلغاء</button>
+                  <button (click)="saveQuickUnit()" [disabled]="savingQuickUnit()"
+                    class="px-4 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all disabled:opacity-50">
+                    {{ savingQuickUnit() ? 'جاري الحفظ...' : 'حفظ واختيار الوحدة ✓' }}
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Quantity Selector in Modal -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <div>
+                <label class="block text-xs font-bold text-slate-700">الكمية المطلوبة ({{ selectedCartItem()!.unitName || 'وحدة' }}):</label>
+                <span class="text-[11px] text-slate-500 font-medium">
+                  الإجمالي: {{ (selectedCartItem()!.sellingPrice * selectedCartItem()!.quantity) | number:'1.2-2' }} ج.م
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button (click)="cart.decreaseQty(selectedCartItem()!.productId)"
+                  class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 flex items-center justify-center text-sm shadow-xs">
+                  -
+                </button>
+                <input
+                  type="number"
+                  [ngModel]="selectedCartItem()!.quantity"
+                  (ngModelChange)="cart.updateQuantity(selectedCartItem()!.productId, $event)"
+                  min="1"
+                  class="w-14 h-8 text-center font-black text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <button (click)="cart.increaseQty(selectedCartItem()!.productId)"
+                  class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-100 flex items-center justify-center text-sm shadow-xs">
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <button (click)="selectedCartItem.set(null)"
+              class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all">
+              تم ✓
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Clear Cart Confirm Dialog -->
     <app-confirm-dialog
       [isOpen]="showClearConfirm()"
@@ -377,16 +599,40 @@ export class PosComponent implements OnInit {
   cart = inject(CartStore);
 
   // ── State ──
-  searchQuery = '';
+  searchQuery = signal<string>('');
   customerSearchQuery = '';
   products = signal<ProductListDto[]>([]);
   categories = signal<CategoryDto[]>([]);
   selectedCategory = signal<string | null>(null);
   filteredCustomers = signal<CustomerListDto[]>([]);
-  isLoadingProducts = signal(true);
+  isLoadingProducts = signal(false);
+  hasProductsError = signal(false);
   showCheckout = signal(false);
   showClearConfirm = signal(false);
   isProcessingSale = signal(false);
+  isManagerApproved = false;
+
+  // Computed state for empty initial state (reacts whenever searchQuery or selectedCategory changes)
+  isInitialState = computed(() => {
+    return !this.selectedCategory() && this.searchQuery().trim().length < 2;
+  });
+
+  // Map of product ID -> total quantity in cart for fast lookup in row component
+  cartQuantitiesMap = computed(() => {
+    const map = new Map<string, number>();
+    for (const item of this.cart.items()) {
+      map.set(item.productId, (map.get(item.productId) || 0) + item.quantity);
+    }
+    return map;
+  });
+
+  // Item Details & Unit Selector Modal State
+  selectedCartItem = signal<CartItem | null>(null);
+  showQuickAddUnit = signal(false);
+  savingQuickUnit = signal(false);
+  quickUnitName = '';
+  quickUnitFactor = 1;
+  quickUnitPrice = 0;
 
   paymentMethods = [
     { value: 'cash' as const, label: 'كاش' },
@@ -396,7 +642,7 @@ export class PosComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.loadProducts();
+    // Only load categories on init. Products start empty with initial state guide.
     this.loadCategories();
 
     // Check for saved draft
@@ -408,19 +654,37 @@ export class PosComponent implements OnInit {
   // ── Product Loading ──
 
   loadProducts(): void {
+    const query = this.searchQuery().trim();
+    const categoryId = this.selectedCategory();
+
+    // If initial state (no category and search text < 2 chars), reset products
+    if (!categoryId && query.length < 2) {
+      this.products.set([]);
+      this.isLoadingProducts.set(false);
+      this.hasProductsError.set(false);
+      return;
+    }
+
     this.isLoadingProducts.set(true);
-    const params: any = { page: 1, pageSize: 50 };
-    if (this.searchQuery.trim()) params.search = this.searchQuery.trim();
-    if (this.selectedCategory()) params.categoryId = this.selectedCategory();
+    this.hasProductsError.set(false);
+
+    const params: any = { page: 1, pageSize: 30 };
+    if (query.length >= 2) params.search = query;
+    if (categoryId) params.categoryId = categoryId;
 
     this.productsService.getAll(params).subscribe({
       next: res => {
         if (res.success && res.data) {
-          this.products.set(res.data.items);
+          this.products.set(res.data.items || []);
+        } else {
+          this.products.set([]);
         }
         this.isLoadingProducts.set(false);
       },
-      error: () => this.isLoadingProducts.set(false)
+      error: () => {
+        this.hasProductsError.set(true);
+        this.isLoadingProducts.set(false);
+      }
     });
   }
 
@@ -428,7 +692,6 @@ export class PosComponent implements OnInit {
     this.apiService.get<any>('categories').subscribe({
       next: (res: any) => {
         if (res.success && res.data) {
-          // If paginated
           const items = res.data.items || res.data;
           this.categories.set(Array.isArray(items) ? items : []);
         }
@@ -436,33 +699,68 @@ export class PosComponent implements OnInit {
     });
   }
 
-  // ── Search ──
+  // ── Search & Filter Controls ──
 
   private searchTimeout: any;
   onSearchChange(query: string): void {
+    this.searchQuery.set(query);
     clearTimeout(this.searchTimeout);
+    const trimmed = query.trim();
+    if (!this.selectedCategory() && trimmed.length < 2) {
+      this.products.set([]);
+      this.isLoadingProducts.set(false);
+      return;
+    }
+    this.isLoadingProducts.set(true);
     this.searchTimeout = setTimeout(() => this.loadProducts(), 300);
   }
 
+  onCategoryChange(categoryId: string | null): void {
+    this.selectedCategory.set(categoryId);
+    this.loadProducts();
+  }
+
+  clearSearch(): void {
+    this.searchQuery.set('');
+    this.loadProducts();
+    this.focusSearch();
+  }
+
+  clearFilters(): void {
+    this.searchQuery.set('');
+    this.selectedCategory.set(null);
+    this.loadProducts();
+    this.focusSearch();
+  }
+
   onSearchEnter(): void {
-    const q = this.searchQuery.trim();
+    const q = this.searchQuery().trim();
     if (!q) return;
 
-    // Try barcode first (numeric or short string)
+    // Try exact barcode match first
     this.productsService.getByBarcode(q).subscribe({
       next: res => {
         if (res.success && res.data) {
           this.cart.addProduct(res.data as any);
           this.notification.success(`تمت إضافة: ${res.data.nameAr}`);
-          this.searchQuery = '';
+          this.playBeep();
+          this.searchQuery.set('');
           this.focusSearch();
+        } else {
+          this.handleBarcodeNotFound(q);
         }
       },
       error: () => {
-        // Not a barcode — load as search
-        this.loadProducts();
+        this.handleBarcodeNotFound(q);
       }
     });
+  }
+
+  private handleBarcodeNotFound(query: string): void {
+    this.notification.warning('الصنف غير موجود');
+    if (query.length >= 2) {
+      this.loadProducts();
+    }
   }
 
   // ── Barcode Scanner ──
@@ -473,17 +771,29 @@ export class PosComponent implements OnInit {
         if (res.success && res.data) {
           this.cart.addProduct(res.data as any);
           this.notification.success(`🔊 ${res.data.nameAr}`);
-          // Play beep sound
           this.playBeep();
+        } else {
+          this.notification.warning('الصنف غير موجود');
         }
       },
       error: () => {
-        this.notification.warning(`لم يتم العثور على منتج بالباركود: ${barcode}`);
+        this.notification.warning('الصنف غير موجود');
       }
     });
   }
 
+
   // ── Cart Actions ──
+
+  getCartQuantity(productId: string): number {
+    const item = this.cart.items().find(i => i.productId === productId);
+    return item ? item.quantity : 0;
+  }
+
+  onProductAddToCart(event: AddToCartEvent): void {
+    if (event.product.totalStock <= 0) return;
+    this.cart.addProduct(event.product, event.unit);
+  }
 
   addProductToCart(product: ProductListDto): void {
     if (product.totalStock <= 0) return;
@@ -531,15 +841,20 @@ export class PosComponent implements OnInit {
       items: this.cart.items().map(item => ({
         productId: item.productId,
         quantity: item.quantity,
+        unitId: item.unitId,
       })),
       amountPaid,
       customerId: this.cart.selectedCustomer()?.id,
+      discountPercent: this.cart.discountPercent(),
+      discountReason: this.cart.discountReason(),
+      isManagerApproved: this.isManagerApproved,
     };
 
     this.invoicesService.create(request).subscribe({
       next: res => {
         if (res.success) {
           this.notification.success('✅ تم تسجيل الفاتورة بنجاح!');
+          this.isManagerApproved = false;
 
           // Fetch invoice detail for printing
           this.invoicesService.getById(res.data).subscribe({
@@ -586,6 +901,92 @@ export class PosComponent implements OnInit {
     this.showCheckout.set(false);
     this.showClearConfirm.set(false);
     this.focusSearch();
+  }
+
+  // ── Item Details & Unit Modal Actions ──
+
+  openItemDetailsModal(item: CartItem): void {
+    this.selectedCartItem.set(item);
+    this.showQuickAddUnit.set(false);
+    this.quickUnitName = '';
+    this.quickUnitFactor = 1;
+    this.quickUnitPrice = 0;
+  }
+
+  openAddUnitModal(item: CartItem): void {
+    this.selectedCartItem.set(item);
+    this.showQuickAddUnit.set(true);
+    this.quickUnitName = '';
+    this.quickUnitFactor = 1;
+    this.quickUnitPrice = 0;
+  }
+
+  selectUnitInModal(unit: ProductUnitDto): void {
+    const item = this.selectedCartItem();
+    if (!item) return;
+    this.cart.changeUnit(item.productId, unit);
+    const updated = this.cart.items().find(i => i.productId === item.productId);
+    if (updated) {
+      this.selectedCartItem.set(updated);
+    }
+  }
+
+  saveQuickUnit(): void {
+    const item = this.selectedCartItem();
+    if (!item) return;
+    if (!this.quickUnitName.trim() || this.quickUnitFactor <= 0 || this.quickUnitPrice < 0) {
+      this.notification.warning('يرجى إدخال اسم الوحدة ومعامل التحويل وسعر البيع بشكل صحيح');
+      return;
+    }
+
+    this.savingQuickUnit.set(true);
+    const body: CreateProductUnitRequest = {
+      name: this.quickUnitName.trim(),
+      conversionFactor: Number(this.quickUnitFactor),
+      salePrice: Number(this.quickUnitPrice),
+      isDefaultSale: false
+    };
+
+    this.productsService.addUnit(item.productId, body).subscribe({
+      next: (res) => {
+        this.savingQuickUnit.set(false);
+        if (res.success && res.data) {
+          const newUnit = res.data;
+          this.notification.success(`تمت إضافة الوحدة "${newUnit.name}" بنجاح`);
+          // Update product units in products list
+          this.products.update(prods =>
+            prods.map(p =>
+              p.id === item.productId
+                ? { ...p, units: [...(p.units || []), newUnit] }
+                : p
+            )
+          );
+          // Update units in cart
+          const existingUnits = item.units || [];
+          const updatedUnits = [...existingUnits, newUnit];
+          this.cart.updateItemUnits(item.productId, updatedUnits);
+          // Select this new unit!
+          this.cart.changeUnit(item.productId, newUnit);
+          const updated = this.cart.items().find(i => i.productId === item.productId);
+          if (updated) {
+            this.selectedCartItem.set(updated);
+          }
+          this.showQuickAddUnit.set(false);
+        }
+      },
+      error: (err) => {
+        this.savingQuickUnit.set(false);
+        this.notification.error(err.error?.message || 'فشل إضافة الوحدة');
+      }
+    });
+  }
+
+  getItemProfitMargin(item: CartItem): string {
+    const cost = item.unitCostPrice || item.costPrice || 0;
+    if (cost <= 0) return '100';
+    const profit = item.sellingPrice - cost;
+    const margin = (profit / cost) * 100;
+    return margin.toFixed(1);
   }
 
   // ── Helpers ──

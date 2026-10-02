@@ -16,6 +16,17 @@ public class ReturnInvoiceItemConfiguration : IEntityTypeConfiguration<ReturnInv
         builder.Property(i => i.DiscountPercentage)
             .HasPrecision(5, 2);
 
+        builder.Property(i => i.UnitName)
+            .IsRequired()
+            .HasMaxLength(100)
+            .HasDefaultValue("وحدة");
+
+        builder.Property(i => i.ConversionFactor)
+            .HasDefaultValue(1);
+
+        builder.Property(i => i.BaseQuantity)
+            .HasDefaultValue(0);
+
         builder.Ignore(i => i.NetUnitPrice);
         builder.Ignore(i => i.LineTotal);
 

@@ -8,6 +8,10 @@ using RetailHub.Application.Features.Products.DTOs;
 using RetailHub.Application.Features.Products.Queries.GetProductByBarcode;
 using RetailHub.Application.Features.Products.Queries.GetProductById;
 using RetailHub.Application.Features.Products.Queries.GetProducts;
+using RetailHub.Application.Features.ProductUnits.Commands.CreateProductUnit;
+using RetailHub.Application.Features.ProductUnits.Commands.DeleteProductUnit;
+using RetailHub.Application.Features.ProductUnits.Commands.UpdateProductUnit;
+using RetailHub.Application.Features.ProductUnits.DTOs;
 
 namespace RetailHub.API.Controllers;
 
@@ -22,9 +26,14 @@ public class ProductsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? search = null,
+        [FromQuery] Guid? categoryId = null,
+        [FromQuery] Guid? brandId = null,
+        [FromQuery] bool? lowStockOnly = null,
+        [FromQuery] string? stockStatus = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProductsQuery(page, pageSize, search), cancellationToken);
+        var effectiveStockStatus = stockStatus ?? (lowStockOnly == true ? "lowStock" : null);
+        var result = await _mediator.Send(new GetProductsQuery(page, pageSize, search, categoryId, brandId, lowStockOnly, effectiveStockStatus), cancellationToken);
 
         return result.IsSuccess
             ? Ok(new ApiResponse<object> { Success = true, Data = result.Value })
@@ -103,5 +112,62 @@ public class ProductsController : ControllerBase
         return result.IsSuccess
             ? NoContent()
             : NotFound(new ApiResponse<object> { Success = false, Message = result.Error });
+    }
+
+    [HttpPost("{id:guid}/units")]
+    public async Task<IActionResult> AddUnit(
+        [FromRoute] Guid id,
+        [FromBody] CreateProductUnitRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new CreateProductUnitCommand(
+            id,
+            request.Name,
+            request.ConversionFactor,
+            request.SalePrice,
+            request.Barcode,
+            request.IsDefaultSale);
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(new ApiResponse<ProductUnitDto> { Success = true, Data = result.Value! })
+            : BadRequest(new ApiResponse<object> { Success = false, Message = result.Error });
+    }
+
+    [HttpPut("{id:guid}/units/{unitId:guid}")]
+    public async Task<IActionResult> UpdateUnit(
+        [FromRoute] Guid id,
+        [FromRoute] Guid unitId,
+        [FromBody] UpdateProductUnitRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new UpdateProductUnitCommand(
+            unitId,
+            request.Name,
+            request.ConversionFactor,
+            request.SalePrice,
+            request.Barcode,
+            request.IsDefaultSale);
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(new ApiResponse<ProductUnitDto> { Success = true, Data = result.Value! })
+            : BadRequest(new ApiResponse<object> { Success = false, Message = result.Error });
+    }
+
+    [HttpDelete("{id:guid}/units/{unitId:guid}")]
+    public async Task<IActionResult> DeleteUnit(
+        [FromRoute] Guid id,
+        [FromRoute] Guid unitId,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new DeleteProductUnitCommand(unitId);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? NoContent()
+            : BadRequest(new ApiResponse<object> { Success = false, Message = result.Error });
     }
 }

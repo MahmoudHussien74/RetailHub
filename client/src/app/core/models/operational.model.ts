@@ -95,6 +95,7 @@ export interface DailySummaryDto {
   totalOutflows: number;
   closingBalance: number;
   transactionCount: number;
+  totalDiscounts?: number;
 }
 
 export interface RecordCashDrawerTransactionDto {

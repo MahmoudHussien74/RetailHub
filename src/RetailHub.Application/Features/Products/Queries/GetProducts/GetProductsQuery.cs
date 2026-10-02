@@ -7,4 +7,10 @@ namespace RetailHub.Application.Features.Products.Queries.GetProducts;
 public record GetProductsQuery(
     int Page = 1,
     int PageSize = 10,
-    string? Search = null) : IRequest<Result<PagedResult<ProductListDto>>>;
+    string? Search = null,
+    Guid? CategoryId = null,
+    Guid? BrandId = null,
+    bool? LowStockOnly = null,
+    string? StockStatus = null) : IRequest<Result<PagedResult<ProductListDto>>>;
+
+

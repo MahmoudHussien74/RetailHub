@@ -10,6 +10,7 @@ namespace RetailHub.Application.Features.Returns.Commands.CreateReturnInvoice;
 
 /// <summary>
 /// Processes a return against an original sale invoice.
+/// Returns use the same unit as the original sale — BaseQuantity is restored to stock.
 /// 
 /// Algorithm:
 /// 1. Validate original invoice exists and is not voided
@@ -17,10 +18,11 @@ namespace RetailHub.Application.Features.Returns.Commands.CreateReturnInvoice;
 ///    check (original qty - already returned qty) ≥ requested return qty
 /// 3. Create ReturnInvoice with calculated TotalRefundAmount
 /// 4. For each item:
-///    - Sellable (not damaged): Batch.AddQuantity + StockMovement(Return)
+///    - Calculate baseQtyToRestore = returnQty × originalItem.ConversionFactor
+///    - Sellable (not damaged): Batch.AddQuantity(baseQtyToRestore) + StockMovement(Return)
 ///    - Damaged: StockMovement(Damage) only — no stock restoration
-///    - Create ReturnInvoiceItem
-/// 5. If credit invoice → adjust Customer.Balance (decrease debt by refund amount)
+///    - Create ReturnInvoiceItem with unit snapshots from original
+/// 5. If credit invoice → adjust Customer.Balance
 /// 6. Recalculate AverageCost for all affected products
 /// 7. Single SaveChangesAsync — all or nothing
 /// </summary>
@@ -71,6 +73,7 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                     maxReturnable,
                     returnItem.Quantity));
 
+            // Refund uses the unit price (not base unit price)
             totalRefundAmount += returnItem.Quantity * originalItem.UnitPriceAtSale;
             affectedProductIds.Add(originalItem.ProductId);
         }
@@ -87,22 +90,23 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
         foreach (var returnItem in request.Items)
         {
             var originalItem = originalItemsLookup[returnItem.InvoiceItemId];
+            var baseQtyToRestore = returnItem.Quantity * originalItem.ConversionFactor;
 
             if (!returnItem.IsDamaged)
             {
-                // Sellable return: restore stock to original batch
+                // Sellable return: restore base units to original batch
                 var allBatches = await _unitOfWork.Batches
                     .GetByProductIdOrderedByExpiryAsync(originalItem.ProductId, ct);
 
                 var batch = allBatches.FirstOrDefault(b => b.Id == originalItem.BatchId);
-                batch?.AddQuantity(returnItem.Quantity);
+                batch?.AddQuantity(baseQtyToRestore);
 
-                // Record stock movement (Return type)
+                // Record stock movement (Return type, in base units)
                 var returnMovement = StockMovement.Create(
                     originalItem.ProductId,
                     originalItem.BatchId,
                     StockMovementType.Return,
-                    returnItem.Quantity,
+                    baseQtyToRestore,
                     referenceId: returnInvoice.Id);
 
                 await _unitOfWork.StockMovements.AddAsync(returnMovement, ct);
@@ -114,13 +118,13 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                     originalItem.ProductId,
                     originalItem.BatchId,
                     StockMovementType.Damage,
-                    returnItem.Quantity,
+                    baseQtyToRestore,
                     referenceId: returnInvoice.Id);
 
                 await _unitOfWork.StockMovements.AddAsync(damageMovement, ct);
             }
 
-            // Create ReturnInvoiceItem
+            // Create ReturnInvoiceItem with unit snapshots from original
             var returnInvoiceItem = ReturnInvoiceItem.Create(
                 returnInvoiceId: returnInvoice.Id,
                 invoiceItemId: originalItem.Id,
@@ -129,7 +133,9 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                 quantity: returnItem.Quantity,
                 unitPriceAtSale: originalItem.UnitPriceAtSale,
                 discountPercentage: originalItem.DiscountPercentage,
-                isDamaged: returnItem.IsDamaged);
+                isDamaged: returnItem.IsDamaged,
+                unitName: originalItem.UnitName,
+                conversionFactor: originalItem.ConversionFactor);
 
             await _unitOfWork.ReturnInvoices.AddReturnItemAsync(returnInvoiceItem, ct);
         }
@@ -160,6 +166,18 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                 product.RecalculateAverageCost(updatedBatches);
                 _unitOfWork.Products.Update(product);
             }
+        }
+
+        // ── 6b. Record cash outflow in CashDrawer for cash refunds ──
+        if (!originalInvoice.CustomerId.HasValue && totalRefundAmount > 0)
+        {
+            var cashTransaction = CashDrawerTransaction.Create(
+                CashDrawerTransactionType.Return,
+                -totalRefundAmount,
+                referenceId: returnInvoice.Id,
+                notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber}");
+
+            await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }
 
         // ── 7. Atomic save ──

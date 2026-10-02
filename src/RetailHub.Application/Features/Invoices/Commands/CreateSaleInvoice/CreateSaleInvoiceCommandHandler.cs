@@ -9,17 +9,19 @@ using RetailHub.Domain.Enums;
 namespace RetailHub.Application.Features.Invoices.Commands.CreateSaleInvoice;
 
 /// <summary>
-/// Core FEFO (First Expired, First Out) sale handler.
-/// Atomic operation: batch deductions + invoice creation + stock movements = single SaveChangesAsync.
+/// Core FEFO (First Expired, First Out) sale handler with multi-unit support.
+/// Atomic operation: unit resolution + batch deductions + invoice creation + stock movements = single SaveChangesAsync.
 /// 
 /// Algorithm:
-/// 1. Aggregate duplicate ProductIds, validate all products exist and are active
-/// 2. For each product: load FEFO-ordered batches, verify sufficient stock
-/// 3. Pre-calculate TotalAmount by simulating FEFO deductions (read-only pass)
-/// 4. Create Invoice with correct TotalAmount and PaymentStatus
-/// 5. Execute FEFO deductions: deduct batches, create InvoiceItems with snapshots, record StockMovements
-/// 6. Recalculate AverageCost for all affected products
-/// 7. Single SaveChangesAsync — all or nothing
+/// 1. For each item: resolve ProductUnit (explicit UnitId or product's default)
+/// 2. Calculate BaseQuantity = Quantity × ConversionFactor for stock validation
+/// 3. Aggregate duplicate ProductIds, validate all products exist and are active
+/// 4. For each product: load FEFO-ordered batches, verify sufficient stock (in base units)
+/// 5. Pre-calculate Subtotal using unit prices
+/// 6. Create Invoice with correct Subtotal/discount and PaymentStatus
+/// 7. Execute FEFO deductions: deduct BaseQuantity from batches, create InvoiceItems with unit snapshots
+/// 8. Recalculate AverageCost for all affected products
+/// 9. Single SaveChangesAsync — all or nothing
 /// </summary>
 public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoiceCommand, Result<Guid>>
 {
@@ -34,13 +36,45 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
 
     public async Task<Result<Guid>> Handle(CreateSaleInvoiceCommand request, CancellationToken ct)
     {
-        // ── 1. Aggregate requested quantities per product (handles duplicate ProductIds) ──
-        var aggregatedItems = request.Items
+        // ── 1. Resolve units and build enriched item list ──
+        var resolvedItems = new List<ResolvedSaleItem>();
+
+        foreach (var item in request.Items)
+        {
+            ProductUnit? unit;
+            if (item.UnitId.HasValue)
+            {
+                unit = await _unitOfWork.ProductUnits.GetByIdAsync(item.UnitId.Value, ct);
+                if (unit is null)
+                    return Result<Guid>.Failure("وحدة المنتج غير موجودة.");
+                if (unit.ProductId != item.ProductId)
+                    return Result<Guid>.Failure("وحدة المنتج لا تنتمي للمنتج المحدد.");
+            }
+            else
+            {
+                unit = await _unitOfWork.ProductUnits.GetDefaultUnitByProductIdAsync(item.ProductId, ct);
+                if (unit is null)
+                    return Result<Guid>.Failure($"لا توجد وحدة افتراضية للمنتج.");
+            }
+
+            resolvedItems.Add(new ResolvedSaleItem(
+                item.ProductId,
+                item.Quantity,
+                unit));
+        }
+
+        // ── 2. Aggregate requested base quantities per product ──
+        var aggregatedItems = resolvedItems
             .GroupBy(i => i.ProductId)
-            .Select(g => new { ProductId = g.Key, TotalQuantity = g.Sum(x => x.Quantity) })
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                TotalBaseQuantity = g.Sum(x => x.Quantity * x.Unit.ConversionFactor),
+                Items = g.ToList()
+            })
             .ToList();
 
-        // ── 2. Load all products and validate ──
+        // ── 3. Load all products and validate ──
         var products = new Dictionary<Guid, Product>();
         foreach (var item in aggregatedItems)
         {
@@ -51,7 +85,7 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
             products[item.ProductId] = product;
         }
 
-        // ── 2b. Validate customer if provided ──
+        // ── 3b. Validate customer if provided ──
         Domain.Entities.Customer? customer = null;
         if (request.CustomerId.HasValue)
         {
@@ -60,7 +94,7 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
                 return Result<Guid>.Failure(_localizer[MessageKeys.CustomerNotFound]);
         }
 
-        // ── 3. Load FEFO batches and validate stock for all products ──
+        // ── 4. Load FEFO batches and validate stock (in base units) ──
         var batchesByProduct = new Dictionary<Guid, List<Batch>>();
         foreach (var item in aggregatedItems)
         {
@@ -68,76 +102,101 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
                 .GetAvailableBatchesByProductIdAsync(item.ProductId, ct);
 
             var totalAvailable = batches.Sum(b => b.Quantity);
-            if (totalAvailable < item.TotalQuantity)
+            if (totalAvailable < item.TotalBaseQuantity)
             {
                 var product = products[item.ProductId];
                 return Result<Guid>.Failure(string.Format(
                     _localizer[MessageKeys.InsufficientStock],
                     product.NameAr,
                     totalAvailable,
-                    item.TotalQuantity));
+                    item.TotalBaseQuantity));
             }
 
             batchesByProduct[item.ProductId] = batches;
         }
 
-        // ── 4. Pre-calculate TotalAmount (simulate FEFO to determine line totals) ──
-        var totalAmount = 0m;
-        foreach (var item in aggregatedItems)
+        // ── 5. Pre-calculate Subtotal (sum of unit prices × quantities) ──
+        var subtotal = 0m;
+        foreach (var resolved in resolvedItems)
         {
-            var product = products[item.ProductId];
-            totalAmount += item.TotalQuantity * product.SellingPrice;
+            subtotal += resolved.Quantity * resolved.Unit.SalePrice;
         }
+        subtotal = Math.Round(subtotal, 2, MidpointRounding.AwayFromZero);
 
-        // ── 5. Generate invoice number and create Invoice ──
+        // ── 6. Generate invoice number and create Invoice with discount ──
         var invoiceNumber = await _unitOfWork.Invoices.GenerateNextInvoiceNumberAsync(ct);
-        var invoice = Invoice.Create(invoiceNumber, totalAmount, request.AmountPaid, request.CustomerId);
+        var invoice = Invoice.Create(
+            invoiceNumber,
+            subtotal,
+            request.DiscountPercent,
+            request.AmountPaid,
+            request.CustomerId,
+            request.DiscountReason,
+            request.DiscountedByUserId);
         await _unitOfWork.Invoices.AddAsync(invoice, ct);
 
-        // ── 6. FEFO Deductions — create InvoiceItems + StockMovements ──
-        foreach (var item in aggregatedItems)
+        // ── 7. FEFO Deductions — create InvoiceItems + StockMovements ──
+        foreach (var agg in aggregatedItems)
         {
-            var product = products[item.ProductId];
-            var batches = batchesByProduct[item.ProductId];
-            var remainingQuantity = item.TotalQuantity;
+            var batches = batchesByProduct[agg.ProductId];
 
-            foreach (var batch in batches)
+            // Process each resolved item (preserving unit info per cart row)
+            foreach (var resolved in agg.Items)
             {
-                if (remainingQuantity <= 0)
-                    break;
+                var baseQtyToDeduct = resolved.Quantity * resolved.Unit.ConversionFactor;
+                var remainingBaseQty = baseQtyToDeduct;
+                Guid? primaryBatchId = null;
+                decimal unitCostAtSale = 0m;
 
-                var deductAmount = Math.Min(batch.Quantity, remainingQuantity);
+                foreach (var batch in batches)
+                {
+                    if (remainingBaseQty <= 0)
+                        break;
 
-                // Deduct from batch (domain method enforces invariants)
-                batch.DeductQuantity(deductAmount);
+                    if (batch.Quantity <= 0)
+                        continue;
 
-                // Create InvoiceItem with immutable price/cost snapshots
+                    var deductAmount = Math.Min(batch.Quantity, remainingBaseQty);
+
+                    // Deduct from batch (domain method enforces invariants)
+                    batch.DeductQuantity(deductAmount);
+                    if (primaryBatchId is null)
+                    {
+                        primaryBatchId = batch.Id;
+                        unitCostAtSale = batch.PurchasePrice;
+                    }
+
+                    // Record stock movement (Sale type, in base units)
+                    var movement = StockMovement.Create(
+                        resolved.ProductId,
+                        batch.Id,
+                        StockMovementType.Sale,
+                        deductAmount,
+                        referenceId: invoice.Id);
+
+                    await _unitOfWork.StockMovements.AddAsync(movement, ct);
+
+                    remainingBaseQty -= deductAmount;
+                }
+
+                // Create InvoiceItem with immutable unit/price snapshots
                 var invoiceItem = InvoiceItem.Create(
                     invoiceId: invoice.Id,
-                    productId: product.Id,
-                    batchId: batch.Id,
-                    quantity: deductAmount,
-                    unitPriceAtSale: product.SellingPrice,
-                    unitCostAtSale: batch.PurchasePrice);
+                    productId: resolved.ProductId,
+                    batchId: primaryBatchId ?? batches.First().Id,
+                    quantity: resolved.Quantity,
+                    unitPriceAtSale: resolved.Unit.SalePrice,
+                    unitCostAtSale: unitCostAtSale > 0 ? unitCostAtSale : batches.First().PurchasePrice,
+                    discountPercentage: request.DiscountPercent,
+                    unitId: resolved.Unit.Id,
+                    unitName: resolved.Unit.Name,
+                    conversionFactor: resolved.Unit.ConversionFactor);
 
-                // Add to DbContext via the invoice's Items collection tracking
                 await _unitOfWork.Invoices.AddInvoiceItemAsync(invoiceItem, ct);
-
-                // Record stock movement (Sale type, references this invoice)
-                var movement = StockMovement.Create(
-                    product.Id,
-                    batch.Id,
-                    StockMovementType.Sale,
-                    deductAmount,
-                    referenceId: invoice.Id);
-
-                await _unitOfWork.StockMovements.AddAsync(movement, ct);
-
-                remainingQuantity -= deductAmount;
             }
         }
 
-        // ── 7. Recalculate AverageCost for all affected products ──
+        // ── 8. Recalculate AverageCost for all affected products ──
         foreach (var productId in aggregatedItems.Select(i => i.ProductId))
         {
             var product = products[productId];
@@ -148,17 +207,34 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
             _unitOfWork.Products.Update(product);
         }
 
-        // ── 8. Update Customer.Balance for credit/partial sales ──
-        if (customer is not null && request.AmountPaid < totalAmount)
+        // ── 9. Update Customer.Balance for credit/partial sales ──
+        if (customer is not null && request.AmountPaid < invoice.TotalAmount)
         {
-            var unpaidAmount = totalAmount - request.AmountPaid;
+            var unpaidAmount = invoice.TotalAmount - request.AmountPaid;
             customer.AdjustBalance(unpaidAmount);
             _unitOfWork.Customers.Update(customer);
         }
 
-        // ── 9. Single atomic SaveChangesAsync ──
+        // ── 9b. Record cash inflow in CashDrawer ──
+        if (request.AmountPaid > 0)
+        {
+            var cashTransaction = CashDrawerTransaction.Create(
+                CashDrawerTransactionType.Sale,
+                request.AmountPaid,
+                referenceId: invoice.Id,
+                notes: $"فاتورة بيع رقم {invoice.InvoiceNumber}");
+
+            await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
+        }
+
+        // ── 10. Single atomic SaveChangesAsync ──
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(invoice.Id);
     }
+
+    /// <summary>
+    /// Internal record to hold resolved unit info alongside the original request data.
+    /// </summary>
+    private record ResolvedSaleItem(Guid ProductId, int Quantity, ProductUnit Unit);
 }

@@ -5,4 +5,7 @@
     <Project Path="src/RetailHub.Domain/RetailHub.Domain.csproj" />
     <Project Path="src/RetailHub.Infrastructure/RetailHub.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RetailHub.UnitTests/RetailHub.UnitTests.csproj" />
+  </Folder>
 </Solution>

@@ -116,7 +116,19 @@ public class CreatePurchaseInvoiceCommandHandler
             _unitOfWork.Products.Update(product);
         }
 
-        // ── 7. Atomic save ──
+        // ── 7. Record cash outflow in CashDrawer ──
+        if (totalAmount > 0)
+        {
+            var cashTransaction = CashDrawerTransaction.Create(
+                CashDrawerTransactionType.Expense,
+                -totalAmount,
+                referenceId: purchaseInvoice.Id,
+                notes: $"فاتورة شراء رقم {invoiceNumber}");
+
+            await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
+        }
+
+        // ── 8. Atomic save ──
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(purchaseInvoice.Id);

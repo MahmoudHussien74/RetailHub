@@ -1,4 +1,5 @@
 using RetailHub.Application.Features.Batches.DTOs;
+using RetailHub.Application.Features.ProductUnits.DTOs;
 
 namespace RetailHub.Application.Features.Products.DTOs;
 
@@ -17,6 +18,8 @@ public class ProductDetailDto
     public decimal SellingPrice { get; init; }
     public decimal AverageCost { get; init; }
     public int TotalStock { get; init; }
+    public string StockDisplay { get; set; } = string.Empty;
     public bool IsActive { get; init; }
     public List<BatchDto> Batches { get; init; } = [];
+    public List<ProductUnitDto> Units { get; init; } = [];
 }

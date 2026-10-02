@@ -1,3 +1,31 @@
+// ── Product Unit Models ──
+
+export interface ProductUnitDto {
+  id: string;
+  productId: string;
+  name: string;
+  conversionFactor: number;
+  salePrice: number;
+  barcode?: string;
+  isDefaultSale: boolean;
+}
+
+export interface CreateProductUnitRequest {
+  name: string;
+  conversionFactor: number;
+  salePrice: number;
+  barcode?: string;
+  isDefaultSale?: boolean;
+}
+
+export interface UpdateProductUnitRequest {
+  name: string;
+  conversionFactor: number;
+  salePrice: number;
+  barcode?: string;
+  isDefaultSale?: boolean;
+}
+
 // ── Product Models ──
 
 export interface ProductListDto {
@@ -12,6 +40,8 @@ export interface ProductListDto {
   sellingPrice: number;
   averageCost: number;
   totalStock: number;
+  stockDisplay?: string;
+  units?: ProductUnitDto[];
 }
 
 export interface ProductDetailDto extends ProductListDto {
@@ -28,6 +58,10 @@ export interface CreateProductDto {
   categoryId: string;
   brandId: string;
   sellingPrice: number;
+  purchasePrice?: number;
+  initialStock?: number;
+  expiryDate?: string;
+  units?: CreateProductUnitRequest[];
 }
 
 export interface UpdateProductDto {

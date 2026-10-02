@@ -3,8 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using RetailHub.Application.Common;
 using RetailHub.Application.Common.Localization;
+using RetailHub.Application.Common.Helpers;
 using RetailHub.Application.Features.Batches.DTOs;
 using RetailHub.Application.Features.Products.DTOs;
+using RetailHub.Application.Features.ProductUnits.DTOs;
 using RetailHub.Application.Interfaces;
 
 namespace RetailHub.Application.Features.Products.Queries.GetProductByBarcode;
@@ -24,7 +26,7 @@ public class GetProductByBarcodeQueryHandler
     public async Task<Result<ProductDetailDto>> Handle(GetProductByBarcodeQuery request, CancellationToken ct)
     {
         var dto = await _context.Products
-            .Where(p => p.Barcode == request.Barcode)
+            .Where(p => p.Barcode == request.Barcode || p.Units.Any(u => u.Barcode == request.Barcode))
             .Select(p => new ProductDetailDto
             {
                 Id = p.Id,
@@ -54,12 +56,27 @@ public class GetProductByBarcodeQueryHandler
                         ExpiryDate = b.ExpiryDate,
                         SupplierId = b.SupplierId,
                         CreatedAt = b.CreatedAt
+                    }).ToList(),
+                Units = p.Units
+                    .OrderBy(u => u.ConversionFactor)
+                    .Select(u => new ProductUnitDto
+                    {
+                        Id = u.Id,
+                        ProductId = u.ProductId,
+                        Name = u.Name,
+                        ConversionFactor = u.ConversionFactor,
+                        SalePrice = u.SalePrice,
+                        Barcode = u.Barcode,
+                        IsDefaultSale = u.IsDefaultSale
                     }).ToList()
             })
             .FirstOrDefaultAsync(ct);
 
-        return dto is null
-            ? Result<ProductDetailDto>.Failure(_localizer[MessageKeys.ProductNotFound])
-            : Result<ProductDetailDto>.Success(dto);
+        if (dto is null)
+            return Result<ProductDetailDto>.Failure(_localizer[MessageKeys.ProductNotFound]);
+
+        dto.StockDisplay = StockDisplayHelper.FormatMixedStock(dto.TotalStock, dto.Units);
+
+        return Result<ProductDetailDto>.Success(dto);
     }
 }

@@ -19,6 +19,22 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
         builder.Property(ii => ii.DiscountPercentage)
             .HasPrecision(5, 2);
 
+        builder.Property(ii => ii.DiscountAmount)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
+        // Unit snapshot fields
+        builder.Property(ii => ii.UnitName)
+            .IsRequired()
+            .HasMaxLength(100)
+            .HasDefaultValue("وحدة");
+
+        builder.Property(ii => ii.ConversionFactor)
+            .HasDefaultValue(1);
+
+        builder.Property(ii => ii.BaseQuantity)
+            .HasDefaultValue(0);
+
         // Computed properties (not mapped to DB)
         builder.Ignore(ii => ii.NetUnitPrice);
         builder.Ignore(ii => ii.LineTotal);
@@ -32,5 +48,10 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
             .WithMany()
             .HasForeignKey(ii => ii.BatchId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(ii => ii.Unit)
+            .WithMany()
+            .HasForeignKey(ii => ii.UnitId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

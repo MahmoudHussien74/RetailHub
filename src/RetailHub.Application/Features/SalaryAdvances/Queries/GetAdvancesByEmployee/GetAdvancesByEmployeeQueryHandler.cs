@@ -16,8 +16,12 @@ public class GetAdvancesByEmployeeQueryHandler
     public async Task<Result<PagedResult<SalaryAdvanceListDto>>> Handle(
         GetAdvancesByEmployeeQuery request, CancellationToken ct)
     {
-        var query = _context.SalaryAdvances
-            .Where(sa => sa.EmployeeId == request.EmployeeId);
+        var query = _context.SalaryAdvances.AsQueryable();
+
+        if (request.EmployeeId.HasValue && request.EmployeeId.Value != Guid.Empty)
+        {
+            query = query.Where(sa => sa.EmployeeId == request.EmployeeId.Value);
+        }
 
         var totalCount = await query.CountAsync(ct);
 

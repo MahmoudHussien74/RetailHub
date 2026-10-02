@@ -1,3 +1,5 @@
+using RetailHub.Application.Features.ProductUnits.DTOs;
+
 namespace RetailHub.Application.Features.Products.DTOs;
 
 public class ProductListDto
@@ -13,4 +15,6 @@ public class ProductListDto
     public decimal SellingPrice { get; init; }
     public decimal AverageCost { get; init; }
     public int TotalStock { get; init; }
+    public string StockDisplay { get; set; } = string.Empty;
+    public List<ProductUnitDto> Units { get; init; } = [];
 }

@@ -27,6 +27,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<SalaryAdvance> SalaryAdvances => Set<SalaryAdvance>();
     public DbSet<CashDrawerTransaction> CashDrawerTransactions => Set<CashDrawerTransaction>();
+    public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
+    public DbSet<Shift> Shifts => Set<Shift>();
 
     // IAppDbContext — exposes IQueryable for Query handlers (Projection + AsNoTracking)
     IQueryable<Product> IAppDbContext.Products => Products.AsNoTracking();
@@ -47,6 +49,8 @@ public class AppDbContext : DbContext, IAppDbContext
     IQueryable<Employee> IAppDbContext.Employees => Employees.AsNoTracking();
     IQueryable<SalaryAdvance> IAppDbContext.SalaryAdvances => SalaryAdvances.AsNoTracking();
     IQueryable<CashDrawerTransaction> IAppDbContext.CashDrawerTransactions => CashDrawerTransactions.AsNoTracking();
+    IQueryable<ProductUnit> IAppDbContext.ProductUnits => ProductUnits.AsNoTracking();
+    IQueryable<Shift> IAppDbContext.Shifts => Shifts.AsNoTracking();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

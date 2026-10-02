@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using RetailHub.Application.Common;
+using RetailHub.Application.Common.Helpers;
 using RetailHub.Application.Features.Products.DTOs;
+using RetailHub.Application.Features.ProductUnits.DTOs;
 using RetailHub.Application.Interfaces;
 
 namespace RetailHub.Application.Features.Products.Queries.GetProducts;
@@ -29,6 +31,36 @@ public class GetProductsQueryHandler
                 (p.NameEn != null && p.NameEn.Contains(search)));
         }
 
+        if (request.CategoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == request.CategoryId.Value);
+        }
+
+        if (request.BrandId.HasValue)
+        {
+            query = query.Where(p => p.BrandId == request.BrandId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.StockStatus))
+        {
+            switch (request.StockStatus.ToLower())
+            {
+                case "lowstock":
+                    query = query.Where(p => p.Batches.Where(b => b.Quantity > 0).Sum(b => b.Quantity) <= 5);
+                    break;
+                case "outofstock":
+                    query = query.Where(p => p.Batches.Where(b => b.Quantity > 0).Sum(b => b.Quantity) == 0);
+                    break;
+                case "instock":
+                    query = query.Where(p => p.Batches.Where(b => b.Quantity > 0).Sum(b => b.Quantity) > 5);
+                    break;
+            }
+        }
+        else if (request.LowStockOnly == true)
+        {
+            query = query.Where(p => p.Batches.Where(b => b.Quantity > 0).Sum(b => b.Quantity) <= 5);
+        }
+
         var totalCount = await query.CountAsync(ct);
 
         var items = await query
@@ -47,9 +79,26 @@ public class GetProductsQueryHandler
                 BrandNameEn = p.Brand.NameEn,
                 SellingPrice = p.SellingPrice,
                 AverageCost = p.AverageCost,
-                TotalStock = p.Batches.Where(b => b.Quantity > 0).Sum(b => b.Quantity)
+                TotalStock = p.Batches.Where(b => b.Quantity > 0).Sum(b => b.Quantity),
+                Units = p.Units
+                    .OrderBy(u => u.ConversionFactor)
+                    .Select(u => new ProductUnitDto
+                    {
+                        Id = u.Id,
+                        ProductId = u.ProductId,
+                        Name = u.Name,
+                        ConversionFactor = u.ConversionFactor,
+                        SalePrice = u.SalePrice,
+                        Barcode = u.Barcode,
+                        IsDefaultSale = u.IsDefaultSale
+                    }).ToList()
             })
             .ToListAsync(ct);
+
+        foreach (var item in items)
+        {
+            item.StockDisplay = StockDisplayHelper.FormatMixedStock(item.TotalStock, item.Units);
+        }
 
         var pagedResult = new PagedResult<ProductListDto>(items, totalCount, request.Page, request.PageSize);
         return Result<PagedResult<ProductListDto>>.Success(pagedResult);

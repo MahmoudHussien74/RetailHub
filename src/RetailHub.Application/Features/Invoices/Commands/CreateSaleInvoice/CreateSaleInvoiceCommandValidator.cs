@@ -32,5 +32,13 @@ public class CreateSaleInvoiceCommandValidator : AbstractValidator<CreateSaleInv
             .WithMessage(_ => string.Format(
                 localizer[MessageKeys.MustNotBeNegative],
                 localizer[MessageKeys.InvoiceAmountPaid]));
+
+        RuleFor(x => x.DiscountPercent)
+            .InclusiveBetween(0m, 100m)
+            .WithMessage("نسبة الخصم يجب أن تكون بين 0% و 100%.");
+
+        RuleFor(x => x)
+            .Must(x => x.DiscountPercent <= 10m || x.IsManagerApproved)
+            .WithMessage("نسبة الخصم تتجاوز الحد المسموح للكاشير (10%). تتطلب موافقة المدير.");
     }
 }
