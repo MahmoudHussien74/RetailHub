@@ -223,16 +223,17 @@ import { DashboardStatsDto } from '../../core/models/dashboard.model';
               <span class="text-sm font-black text-rose-800 dark:text-rose-300 font-mono">{{ stats()?.outOfStockProductsCount || 0 }}</span>
             </a>
 
-            <div class="p-3 rounded-xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200/50 rounded-xl flex items-center justify-between">
+            <a routerLink="/reports" [queryParams]="{ tab: 'alerts', view: 'expiry' }"
+              class="p-3 rounded-xl bg-purple-50/60 hover:bg-purple-100/70 dark:bg-purple-950/20 dark:hover:bg-purple-950/40 border border-purple-200/50 hover:border-purple-300 rounded-xl flex items-center justify-between transition-all cursor-pointer group">
               <div class="flex items-center gap-2.5">
-                <span class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-600 flex items-center justify-center font-bold text-xs">⏳</span>
+                <span class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-600 flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform">⏳</span>
                 <div>
-                  <span class="text-xs font-bold text-purple-900 dark:text-purple-200 block">قرب انتهاء الصلاحية</span>
-                  <span class="text-[10px] text-purple-700 dark:text-purple-400">خلال الـ 60 يوماً القادمة</span>
+                  <span class="text-xs font-bold text-purple-900 dark:text-purple-200 block group-hover:underline">قرب انتهاء الصلاحية</span>
+                  <span class="text-[10px] text-purple-700 dark:text-purple-400">خلال الـ 60 يوماً القادمة (اضغط للعرض)</span>
                 </div>
               </div>
               <span class="text-sm font-black text-purple-800 dark:text-purple-300 font-mono">{{ stats()?.nearExpiryBatchesCount || 0 }}</span>
-            </div>
+            </a>
           </div>
 
           <a routerLink="/products" [queryParams]="{ filter: 'lowStock' }"

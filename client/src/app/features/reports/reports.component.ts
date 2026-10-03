@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ReportsService } from '../../core/services/reports.service';
 import { NotificationService } from '../../core/services/notification.service';
 import {
@@ -426,7 +427,13 @@ type ReportTab = 'profit-loss' | 'sales' | 'stock' | 'expenses' | 'best-selling'
                     </div>
                   </div>
 
-                  @if (inventoryAlerts()!.lowStockProducts.length > 0) {
+                  <div class="flex items-center gap-2">
+                    <button (click)="alertsView.set('all')" [class]="alertsView() === 'all' ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-violet-600 text-white' : 'px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300'">الكل</button>
+                    <button (click)="alertsView.set('stock')" [class]="alertsView() === 'stock' ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-white' : 'px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300'">النواقص فقط</button>
+                    <button (click)="alertsView.set('expiry')" [class]="alertsView() === 'expiry' ? 'px-4 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white' : 'px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300'">قرب الانتهاء فقط</button>
+                  </div>
+
+                  @if (alertsView() !== 'expiry' && inventoryAlerts()!.lowStockProducts.length > 0) {
                     <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                       <h4 class="font-bold text-sm text-slate-700 dark:text-slate-200 p-4 border-b border-slate-200 dark:border-slate-700">📦 أصناف ناقصة أو نافدة</h4>
                       <div class="overflow-x-auto">
@@ -449,7 +456,14 @@ type ReportTab = 'profit-loss' | 'sales' | 'stock' | 'expenses' | 'best-selling'
                     </div>
                   }
 
-                  @if (inventoryAlerts()!.nearExpiryBatches.length > 0) {
+                  @if (alertsView() === 'expiry' && inventoryAlerts()!.nearExpiryBatches.length === 0) {
+                    <div class="text-center py-12">
+                      <span class="text-4xl">✅</span>
+                      <p class="text-base font-bold text-green-600 mt-2">لا توجد أصناف قريبة من انتهاء الصلاحية</p>
+                    </div>
+                  }
+
+                  @if (alertsView() !== 'stock' && inventoryAlerts()!.nearExpiryBatches.length > 0) {
                     <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                       <h4 class="font-bold text-sm text-slate-700 dark:text-slate-200 p-4 border-b border-slate-200 dark:border-slate-700">⏰ أصناف قريبة من انتهاء الصلاحية</h4>
                       <div class="overflow-x-auto">
@@ -499,7 +513,10 @@ export class ReportsComponent implements OnInit {
   private reportsService = inject(ReportsService);
   private notify = inject(NotificationService);
 
+  private route = inject(ActivatedRoute);
+
   activeTab = signal<ReportTab>('profit-loss');
+  alertsView = signal<'all' | 'stock' | 'expiry'>('all');
   loading = signal(false);
 
   // Date range
@@ -532,6 +549,14 @@ export class ReportsComponent implements OnInit {
   ngOnInit() {
     this.setQuickDate('month');
     this.loadInventoryAlerts();
+
+    // Deep-link support: /reports?tab=alerts&view=expiry
+    this.route.queryParamMap.subscribe(params => {
+      const tab = params.get('tab') as ReportTab | null;
+      if (tab && this.tabs.some(t => t.key === tab)) this.activeTab.set(tab);
+      const view = params.get('view');
+      if (view === 'expiry' || view === 'stock') this.alertsView.set(view);
+    });
   }
 
   setActiveTab(tab: ReportTab) {
@@ -598,7 +623,8 @@ export class ReportsComponent implements OnInit {
   }
 
   loadInventoryAlerts() {
-    this.reportsService.getInventoryAlerts().subscribe({
+    // 60 days to match the dashboard's near-expiry count
+    this.reportsService.getInventoryAlerts(10, 60).subscribe({
       next: (res) => { if (res.success) this.inventoryAlerts.set(res.data); }
     });
   }

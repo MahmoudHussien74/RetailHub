@@ -334,7 +334,7 @@ import { CategoryDto, BrandDto } from '../../core/models/category-brand.model';
 
       <!-- Quick Add Product Modal (Popup from inside purchase invoice) -->
       @if (showQuickProductModal()) {
-        <div class="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-xs" (click)="showQuickProductModal.set(false)">
+        <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs" (click)="showQuickProductModal.set(false)">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-scale-in" (click)="$event.stopPropagation()">
             <div class="bg-gradient-to-r from-emerald-800 to-teal-800 px-6 py-4 flex items-center justify-between">
               <div>
