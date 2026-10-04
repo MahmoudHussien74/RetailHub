@@ -12,6 +12,7 @@ public class StockMovement : AuditableEntity
     public DateTime MovementDate { get; private set; }
     public Guid? ReferenceId { get; private set; }
     public bool IsVoided { get; private set; }
+    public string? Notes { get; private set; }
 
     // Navigation
     public Product Product { get; private set; } = null!;
@@ -24,7 +25,8 @@ public class StockMovement : AuditableEntity
         Guid batchId,
         StockMovementType type,
         int quantity,
-        Guid? referenceId = null)
+        Guid? referenceId = null,
+        string? notes = null)
     {
         return new StockMovement
         {
@@ -34,7 +36,8 @@ public class StockMovement : AuditableEntity
             Quantity = quantity,
             MovementDate = DateTime.UtcNow,
             ReferenceId = referenceId,
-            IsVoided = false
+            IsVoided = false,
+            Notes = notes
         };
     }
 

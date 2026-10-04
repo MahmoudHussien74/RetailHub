@@ -353,22 +353,46 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 mb-1.5">التصنيف *</label>
-                  <select [(ngModel)]="formCategoryId" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
-                    <option value="">اختر التصنيف</option>
-                    @for (cat of categories(); track cat.id) {
-                      <option [value]="cat.id">{{ cat.nameAr }}</option>
-                    }
-                  </select>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-500">التصنيف *</label>
+                    <button type="button" (click)="inlineCatOpen = !inlineCatOpen; inlineCatName = ''" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
+                      {{ inlineCatOpen ? 'إلغاء' : '+ تصنيف جديد' }}
+                    </button>
+                  </div>
+                  @if (inlineCatOpen) {
+                    <div class="flex gap-2">
+                      <input type="text" [(ngModel)]="inlineCatName" (keydown.enter)="$event.preventDefault(); quickAddCategory()" placeholder="اسم التصنيف الجديد" class="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-emerald-300 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30">
+                      <button type="button" (click)="quickAddCategory()" [disabled]="inlineSaving || !inlineCatName.trim()" class="px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50">حفظ</button>
+                    </div>
+                  } @else {
+                    <select [(ngModel)]="formCategoryId" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                      <option value="">اختر التصنيف</option>
+                      @for (cat of categories(); track cat.id) {
+                        <option [value]="cat.id">{{ cat.nameAr }}</option>
+                      }
+                    </select>
+                  }
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 mb-1.5">الماركة *</label>
-                  <select [(ngModel)]="formBrandId" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
-                    <option value="">اختر الماركة</option>
-                    @for (brand of brands(); track brand.id) {
-                      <option [value]="brand.id">{{ brand.nameAr }}</option>
-                    }
-                  </select>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-500">الماركة *</label>
+                    <button type="button" (click)="inlineBrandOpen = !inlineBrandOpen; inlineBrandName = ''" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
+                      {{ inlineBrandOpen ? 'إلغاء' : '+ ماركة جديدة' }}
+                    </button>
+                  </div>
+                  @if (inlineBrandOpen) {
+                    <div class="flex gap-2">
+                      <input type="text" [(ngModel)]="inlineBrandName" (keydown.enter)="$event.preventDefault(); quickAddBrand()" placeholder="اسم الماركة الجديدة" class="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-emerald-300 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30">
+                      <button type="button" (click)="quickAddBrand()" [disabled]="inlineSaving || !inlineBrandName.trim()" class="px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50">حفظ</button>
+                    </div>
+                  } @else {
+                    <select [(ngModel)]="formBrandId" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                      <option value="">اختر الماركة</option>
+                      @for (brand of brands(); track brand.id) {
+                        <option [value]="brand.id">{{ brand.nameAr }}</option>
+                      }
+                    </select>
+                  }
                 </div>
               </div>
               @if (!editingProduct()) {
@@ -397,9 +421,25 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">الرصيد الافتتاحي بالمخزن (عدد العلب)</label>
-                    <input type="number" [(ngModel)]="formInitialStock" placeholder="الكمية المتوفرة حالياً" min="0"
-                      class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-bold text-slate-800"/>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">الرصيد الافتتاحي بالمخزن</label>
+                    <div class="flex gap-2">
+                      <input type="number" [(ngModel)]="formInitialStock" placeholder="الكمية المتوفرة" min="0"
+                        class="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-bold text-slate-800"/>
+                      <select [(ngModel)]="formInitialStockUnit" class="w-28 px-2 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/30">
+                        <option value="box">علبة</option>
+                        @if (enableSubUnits && stripsPerBox) {
+                          <option value="strip">شريط</option>
+                        }
+                        @if (enableSubUnits && (tabletsPerBox || stripsPerBox)) {
+                          <option value="tablet">قرص</option>
+                        }
+                      </select>
+                    </div>
+                    @if (formInitialStock && formInitialStock > 0 && enableSubUnits && (tabletsPerBox || stripsPerBox)) {
+                      <p class="text-[11px] text-emerald-700 font-medium mt-1">
+                        سيتم إيداع: {{ getCalculatedInitialBaseStock() }} وحدة أساسية بالمخزن
+                      </p>
+                    }
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">تاريخ الصلاحية (اختياري)</label>
@@ -673,9 +713,15 @@ export class ProductsComponent implements OnInit {
   formNameEn = '';
   formCategoryId = '';
   formBrandId = '';
+  inlineCatOpen = false;
+  inlineCatName = '';
+  inlineBrandOpen = false;
+  inlineBrandName = '';
+  inlineSaving = false;
   formSellingPrice = 0;
   formPurchasePrice: number | null = null;
   formInitialStock: number | null = null;
+  formInitialStockUnit: 'box' | 'strip' | 'tablet' = 'box';
   formExpiryDate = '';
 
   displayedProducts = computed(() => this.products());
@@ -806,6 +852,50 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  quickAddCategory() {
+    const name = this.inlineCatName.trim();
+    if (!name || this.inlineSaving) return;
+    this.inlineSaving = true;
+    this.categoriesService.create({ nameAr: name }).subscribe({
+      next: (res) => {
+        this.inlineSaving = false;
+        if (res.success) {
+          this.notify.success('تم إضافة التصنيف');
+          this.categories.update(list => [...list, { id: res.data, nameAr: name } as any]);
+          this.formCategoryId = res.data;
+          this.inlineCatOpen = false;
+          this.inlineCatName = '';
+          this.loadCategories();
+        } else {
+          this.notify.error(res.message || 'تعذر إضافة التصنيف');
+        }
+      },
+      error: (err) => { this.inlineSaving = false; this.notify.error(err?.error?.message || 'تعذر إضافة التصنيف'); }
+    });
+  }
+
+  quickAddBrand() {
+    const name = this.inlineBrandName.trim();
+    if (!name || this.inlineSaving) return;
+    this.inlineSaving = true;
+    this.brandsService.create({ nameAr: name }).subscribe({
+      next: (res) => {
+        this.inlineSaving = false;
+        if (res.success) {
+          this.notify.success('تم إضافة الماركة');
+          this.brands.update(list => [...list, { id: res.data, nameAr: name } as any]);
+          this.formBrandId = res.data;
+          this.inlineBrandOpen = false;
+          this.inlineBrandName = '';
+          this.loadBrands();
+        } else {
+          this.notify.error(res.message || 'تعذر إضافة الماركة');
+        }
+      },
+      error: (err) => { this.inlineSaving = false; this.notify.error(err?.error?.message || 'تعذر إضافة الماركة'); }
+    });
+  }
+
   deleteCategory(id: string) {
     this.categoriesService.delete(id).subscribe({
       next: () => { this.notify.success('تم حذف التصنيف'); this.loadCategories(); }
@@ -867,6 +957,34 @@ export class ProductsComponent implements OnInit {
     this.customTabletPriceSet = true;
   }
 
+  getCalculatedInitialBaseStock(): number {
+    if (!this.formInitialStock || this.formInitialStock <= 0) return 0;
+    const qty = Number(this.formInitialStock);
+    if (!this.enableSubUnits) return qty;
+
+    const totalTablets = this.tabletsPerBox ? Number(this.tabletsPerBox) : 0;
+    const numStrips = this.stripsPerBox ? Number(this.stripsPerBox) : 0;
+
+    if (totalTablets > 0) {
+      if (this.formInitialStockUnit === 'box') {
+        return qty * totalTablets;
+      } else if (this.formInitialStockUnit === 'strip') {
+        const tabletsPerStrip = numStrips > 0 ? Math.max(1, Math.round(totalTablets / numStrips)) : 1;
+        return qty * tabletsPerStrip;
+      } else {
+        return qty;
+      }
+    } else if (numStrips > 0) {
+      if (this.formInitialStockUnit === 'box') {
+        return qty * numStrips;
+      } else {
+        return qty;
+      }
+    }
+
+    return qty;
+  }
+
   openCreateProduct() {
     this.editingProduct.set(null);
     this.formBarcode = '';
@@ -877,6 +995,7 @@ export class ProductsComponent implements OnInit {
     this.formSellingPrice = 0;
     this.formPurchasePrice = null;
     this.formInitialStock = null;
+    this.formInitialStockUnit = 'box';
     this.formExpiryDate = '';
     this.enableSubUnits = false;
     this.stripsPerBox = null;
@@ -1007,6 +1126,27 @@ export class ProductsComponent implements OnInit {
         });
       }
 
+      // Calculate base quantity and base cost for initial stock batch
+      const calculatedBaseStock = this.getCalculatedInitialBaseStock();
+      let calculatedBasePurchasePrice: number | undefined = undefined;
+
+      if (this.formPurchasePrice && this.formPurchasePrice > 0) {
+        const boxCost = Number(this.formPurchasePrice);
+        if (this.enableSubUnits) {
+          const totalTablets = this.tabletsPerBox ? Number(this.tabletsPerBox) : 0;
+          const numStrips = this.stripsPerBox ? Number(this.stripsPerBox) : 0;
+          if (totalTablets > 0) {
+            calculatedBasePurchasePrice = Math.round((boxCost / totalTablets) * 100) / 100;
+          } else if (numStrips > 0) {
+            calculatedBasePurchasePrice = Math.round((boxCost / numStrips) * 100) / 100;
+          } else {
+            calculatedBasePurchasePrice = boxCost;
+          }
+        } else {
+          calculatedBasePurchasePrice = boxCost;
+        }
+      }
+
       const dto: CreateProductDto = {
         barcode: this.formBarcode,
         nameAr: this.formNameAr,
@@ -1014,8 +1154,8 @@ export class ProductsComponent implements OnInit {
         categoryId: this.formCategoryId,
         brandId: this.formBrandId,
         sellingPrice: Number(this.formSellingPrice),
-        purchasePrice: this.formPurchasePrice ? Number(this.formPurchasePrice) : undefined,
-        initialStock: this.formInitialStock ? Number(this.formInitialStock) : undefined,
+        purchasePrice: calculatedBasePurchasePrice,
+        initialStock: calculatedBaseStock > 0 ? calculatedBaseStock : undefined,
         expiryDate: this.formExpiryDate || undefined,
         units: units.length > 0 ? units : undefined
       };

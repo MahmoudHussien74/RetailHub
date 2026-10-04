@@ -33,6 +33,7 @@ export class MainLayoutComponent {
     { label: 'الخزينة اليومية', labelEn: 'Cash Drawer', icon: 'cash', route: '/cash-drawer' },
     { label: 'الموظفين والسلف', labelEn: 'Employees & Advances', icon: 'user-check', route: '/employees' },
     { label: 'التقارير والإحصائيات', labelEn: 'Reports & Analytics', icon: 'chart', route: '/reports' },
+    { label: 'تسوية المخزون والتوالف', labelEn: 'Stock Adjustments', icon: 'adjust', route: '/stock-adjustments' },
   ];
 
   constructor() {

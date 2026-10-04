@@ -364,22 +364,46 @@ import { CategoryDto, BrandDto } from '../../core/models/category-brand.model';
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">التصنيف</label>
-                  <select [(ngModel)]="quickCategoryId" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-emerald-500/30">
-                    <option value="">اختر التصنيف</option>
-                    @for (cat of categories(); track cat.id) {
-                      <option [value]="cat.id">{{ cat.nameAr }}</option>
-                    }
-                  </select>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-slate-700">التصنيف</label>
+                    <button type="button" (click)="inlineCatOpen = !inlineCatOpen; inlineCatName = ''" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
+                      {{ inlineCatOpen ? 'إلغاء' : '+ جديد' }}
+                    </button>
+                  </div>
+                  @if (inlineCatOpen) {
+                    <div class="flex gap-1.5">
+                      <input type="text" [(ngModel)]="inlineCatName" (keydown.enter)="$event.preventDefault(); quickAddCategory()" placeholder="اسم التصنيف" class="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-emerald-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500/30">
+                      <button type="button" (click)="quickAddCategory()" [disabled]="inlineSaving || !inlineCatName.trim()" class="px-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50">حفظ</button>
+                    </div>
+                  } @else {
+                    <select [(ngModel)]="quickCategoryId" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-emerald-500/30">
+                      <option value="">اختر التصنيف</option>
+                      @for (cat of categories(); track cat.id) {
+                        <option [value]="cat.id">{{ cat.nameAr }}</option>
+                      }
+                    </select>
+                  }
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">الشركة / الماركة</label>
-                  <select [(ngModel)]="quickBrandId" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-emerald-500/30">
-                    <option value="">اختر الماركة</option>
-                    @for (brand of brands(); track brand.id) {
-                      <option [value]="brand.id">{{ brand.nameAr }}</option>
-                    }
-                  </select>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-slate-700">الشركة / الماركة</label>
+                    <button type="button" (click)="inlineBrandOpen = !inlineBrandOpen; inlineBrandName = ''" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
+                      {{ inlineBrandOpen ? 'إلغاء' : '+ جديد' }}
+                    </button>
+                  </div>
+                  @if (inlineBrandOpen) {
+                    <div class="flex gap-1.5">
+                      <input type="text" [(ngModel)]="inlineBrandName" (keydown.enter)="$event.preventDefault(); quickAddBrand()" placeholder="اسم الماركة" class="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-emerald-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500/30">
+                      <button type="button" (click)="quickAddBrand()" [disabled]="inlineSaving || !inlineBrandName.trim()" class="px-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50">حفظ</button>
+                    </div>
+                  } @else {
+                    <select [(ngModel)]="quickBrandId" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-emerald-500/30">
+                      <option value="">اختر الماركة</option>
+                      @for (brand of brands(); track brand.id) {
+                        <option [value]="brand.id">{{ brand.nameAr }}</option>
+                      }
+                    </select>
+                  }
                 </div>
               </div>
 
@@ -505,6 +529,11 @@ export class PurchasesComponent implements OnInit {
   quickBarcode = '';
   quickCategoryId = '';
   quickBrandId = '';
+  inlineCatOpen = false;
+  inlineCatName = '';
+  inlineBrandOpen = false;
+  inlineBrandName = '';
+  inlineSaving = false;
   quickSellingPrice = 0;
   quickPurchasePrice: number | null = null;
   quickSaving = signal(false);
@@ -535,6 +564,50 @@ export class PurchasesComponent implements OnInit {
   loadBrands() {
     this.brandsService.getAll({ pageSize: 100 }).subscribe({
       next: (res) => { if (res.success) this.brands.set(res.data.items); }
+    });
+  }
+
+  quickAddCategory() {
+    const name = this.inlineCatName.trim();
+    if (!name || this.inlineSaving) return;
+    this.inlineSaving = true;
+    this.categoriesService.create({ nameAr: name }).subscribe({
+      next: (res) => {
+        this.inlineSaving = false;
+        if (res.success) {
+          this.notify.success('تم إضافة التصنيف');
+          this.categories.update(list => [...list, { id: res.data, nameAr: name } as any]);
+          this.quickCategoryId = res.data;
+          this.inlineCatOpen = false;
+          this.inlineCatName = '';
+          this.loadCategories();
+        } else {
+          this.notify.error(res.message || 'تعذر إضافة التصنيف');
+        }
+      },
+      error: (err) => { this.inlineSaving = false; this.notify.error(err?.error?.message || 'تعذر إضافة التصنيف'); }
+    });
+  }
+
+  quickAddBrand() {
+    const name = this.inlineBrandName.trim();
+    if (!name || this.inlineSaving) return;
+    this.inlineSaving = true;
+    this.brandsService.create({ nameAr: name }).subscribe({
+      next: (res) => {
+        this.inlineSaving = false;
+        if (res.success) {
+          this.notify.success('تم إضافة الماركة');
+          this.brands.update(list => [...list, { id: res.data, nameAr: name } as any]);
+          this.quickBrandId = res.data;
+          this.inlineBrandOpen = false;
+          this.inlineBrandName = '';
+          this.loadBrands();
+        } else {
+          this.notify.error(res.message || 'تعذر إضافة الماركة');
+        }
+      },
+      error: (err) => { this.inlineSaving = false; this.notify.error(err?.error?.message || 'تعذر إضافة الماركة'); }
     });
   }
 
