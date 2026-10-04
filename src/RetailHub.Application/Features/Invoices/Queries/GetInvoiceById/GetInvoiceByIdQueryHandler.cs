@@ -61,7 +61,8 @@ public class GetInvoiceByIdQueryHandler
                     UnitCostAtSale = ii.UnitCostAtSale,
                     DiscountPercentage = ii.DiscountPercentage,
                     DiscountAmount = ii.DiscountAmount,
-                    LineTotal = Math.Round((ii.Quantity * ii.UnitPriceAtSale) - ii.DiscountAmount, 2, MidpointRounding.AwayFromZero)
+                    LineTotal = Math.Round((ii.Quantity * ii.UnitPriceAtSale) - ii.DiscountAmount, 2, MidpointRounding.AwayFromZero),
+                    NetUnitPrice = Math.Round(ii.UnitPriceAtSale * (1m - (ii.DiscountPercentage / 100m)), 2, MidpointRounding.AwayFromZero)
                 }).ToList()
             })
             .FirstOrDefaultAsync(ct);

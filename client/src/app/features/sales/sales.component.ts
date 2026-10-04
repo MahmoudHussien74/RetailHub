@@ -327,6 +327,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                       <th class="text-center px-3 py-2.5">المتاح للإرجاع</th>
                       <th class="text-center px-3 py-2.5">كمية المرتجع</th>
                       <th class="text-center px-3 py-2.5">الحالة</th>
+                      <th class="text-right px-3 py-2.5">سعر الاسترداد</th>
                       <th class="text-right px-3 py-2.5">المسترد</th>
                     </tr>
                   </thead>
@@ -363,6 +364,12 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                             <input type="checkbox" [(ngModel)]="item.isDamaged" class="rounded text-rose-600 focus:ring-0 text-xs">
                             <span>{{ item.isDamaged ? 'تالف' : 'سليم' }}</span>
                           </label>
+                        </td>
+                        <td class="px-3 py-3 text-right">
+                          <span class="font-bold text-slate-800">{{ item.unitPrice | number:'1.2-2' }} ج.م</span>
+                          @if ((item.discountPercentage ?? 0) > 0) {
+                            <span class="block text-[10px] text-amber-600 line-through">{{ item.originalUnitPrice | number:'1.2-2' }} (خصم {{ item.discountPercentage }}%)</span>
+                          }
                         </td>
                         <td class="px-3 py-3 text-right font-black text-purple-900">
                           {{ (item.returnQty * item.unitPrice) | number:'1.2-2' }} ج.م
@@ -441,6 +448,8 @@ export class SalesComponent implements OnInit {
     productNameAr: string;
     unitName: string;
     unitPrice: number;
+    originalUnitPrice: number;
+    discountPercentage: number;
     maxQty: number;
     returnQty: number;
     isDamaged: boolean;
@@ -495,13 +504,27 @@ export class SalesComponent implements OnInit {
       next: (res) => {
         if (res.success && res.data) {
           this.returningInvoice.set(res.data);
+          const invoiceDisc = res.data.discountPercent || 0;
           const items = res.data.items.map(i => {
             const max = i.remainingReturnableQuantity != null ? i.remainingReturnableQuantity : i.quantity;
+            const itemDisc = i.discountPercentage || 0;
+            let effectiveUnitPrice = i.netUnitPrice ?? (i.unitPriceAtSale * (1 - itemDisc / 100));
+            if (invoiceDisc > 0 && itemDisc === 0) {
+              effectiveUnitPrice = effectiveUnitPrice * (1 - invoiceDisc / 100);
+            }
+            effectiveUnitPrice = Math.round(effectiveUnitPrice * 100) / 100;
+
+            const effectiveDiscPercent = itemDisc > 0 
+              ? itemDisc 
+              : (invoiceDisc > 0 ? invoiceDisc : 0);
+
             return {
               invoiceItemId: i.id,
               productNameAr: i.productNameAr,
               unitName: i.unitName || 'وحدة',
-              unitPrice: i.unitPriceAtSale,
+              unitPrice: effectiveUnitPrice,
+              originalUnitPrice: i.unitPriceAtSale,
+              discountPercentage: effectiveDiscPercent,
               maxQty: max,
               returnQty: max, // default to all
               isDamaged: false

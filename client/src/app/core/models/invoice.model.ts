@@ -57,6 +57,7 @@ export interface InvoiceItemDto {
   discountPercentage: number;
   discountAmount: number;
   lineTotal: number;
+  netUnitPrice?: number;
 }
 
 // ── Create Sale Request ──

@@ -17,6 +17,7 @@ public class InvoiceItemDto
     public decimal DiscountPercentage { get; init; }
     public decimal DiscountAmount { get; init; }
     public decimal LineTotal { get; init; }
+    public decimal NetUnitPrice { get; init; }
     public int ReturnedQuantity { get; init; }
     public int RemainingReturnableQuantity => Math.Max(0, Quantity - ReturnedQuantity);
 }

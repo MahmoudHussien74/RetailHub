@@ -46,59 +46,106 @@ public class GetProfitLossReportQueryHandler
             })
             .ToListAsync(ct);
 
-        // Returns
+        // Returns with line item details for COGS reduction and period breakdown
         var returns = await _db.ReturnInvoices
             .Where(r => r.CreatedAt >= from && r.CreatedAt < to)
-            .Select(r => new { r.TotalRefundAmount, r.CreatedAt })
+            .Select(r => new { r.Id, r.TotalRefundAmount, r.CreatedAt })
             .ToListAsync(ct);
 
-        // Expenses (from cash drawer)
+        var returnItems = await _db.ReturnInvoiceItems
+            .Where(r => r.ReturnInvoice.CreatedAt >= from && r.ReturnInvoice.CreatedAt < to)
+            .Select(r => new
+            {
+                r.ReturnInvoiceId,
+                RefundAmount = r.Quantity * r.UnitPriceAtSale * (1m - r.DiscountPercentage / 100m),
+                // Undamaged returns reduce Cost of Goods Sold because items were restored to inventory
+                ReturnedCost = !r.IsDamaged 
+                    ? (r.BaseQuantity > 0 ? r.BaseQuantity : (r.Quantity * (r.ConversionFactor > 0 ? r.ConversionFactor : 1))) * r.InvoiceItem.UnitCostAtSale 
+                    : 0m,
+                r.IsDamaged,
+                CreatedAt = r.ReturnInvoice.CreatedAt
+            })
+            .ToListAsync(ct);
+
+        // Operating Expenses from cash drawer
+        // Strictly exclude purchase invoice payments to prevent double-counting inventory purchases
         var expenses = await _db.CashDrawerTransactions
             .Where(c => c.Type == CashDrawerTransactionType.Expense
-                        && c.TransactionDate >= from && c.TransactionDate < to)
-            .SumAsync(c => Math.Abs(c.Amount), ct);
+                        && c.TransactionDate >= from && c.TransactionDate < to
+                        && (!c.ReferenceId.HasValue || !_db.PurchaseInvoices.Any(p => p.Id == c.ReferenceId.Value))
+                        && (c.Notes == null || (!c.Notes.Contains("شراء") && !c.Notes.Contains("مشتريات"))))
+            .SumAsync(c => (decimal?)Math.Abs(c.Amount), ct) ?? 0m;
 
         // Salary advances
         var salaryAdvances = await _db.SalaryAdvances
             .Where(s => s.AdvanceDate >= from && s.AdvanceDate < to)
-            .SumAsync(s => s.Amount, ct);
+            .SumAsync(s => (decimal?)s.Amount, ct) ?? 0m;
 
         // Purchases total
         var purchases = await _db.PurchaseInvoices
             .Where(p => p.PurchaseDate >= from && p.PurchaseDate < to)
-            .SumAsync(p => p.TotalAmount, ct);
+            .SumAsync(p => (decimal?)p.TotalAmount, ct) ?? 0m;
 
         var totalRevenue = invoices.Sum(i => i.TotalAmount);
         var totalReturns = returns.Sum(r => r.TotalRefundAmount);
-        var netRevenue = totalRevenue - totalReturns;
-        var cogs = invoiceItems.Sum(ii => ii.Cost);
+        var netRevenue = Math.Max(0m, totalRevenue - totalReturns);
+
+        var grossCogs = invoiceItems.Sum(ii => ii.Cost);
+        var returnedCogs = returnItems.Sum(ri => ri.ReturnedCost);
+        var cogs = Math.Max(0m, grossCogs - returnedCogs);
+
         var grossProfit = netRevenue - cogs;
         var totalExpenses = expenses + salaryAdvances;
         var netProfit = grossProfit - totalExpenses;
 
-        // Period breakdown
+        // Period breakdown: properly accounts for sales AND returns per period
         var breakdown = new List<ProfitLossPeriodRow>();
         var granularity = request.Granularity?.ToLowerInvariant() ?? "daily";
 
-        var groupedItems = invoiceItems.GroupBy(ii => granularity switch
+        string GetPeriodKey(DateTime date) => granularity switch
         {
-            "monthly" => ii.CreatedAt.ToString("yyyy-MM"),
-            "weekly" => $"{ii.CreatedAt.Year}-W{CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(ii.CreatedAt, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday):D2}",
-            _ => ii.CreatedAt.ToString("yyyy-MM-dd")
-        });
+            "monthly" => date.ToString("yyyy-MM"),
+            "weekly" => $"{date.Year}-W{CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday):D2}",
+            _ => date.ToString("yyyy-MM-dd")
+        };
 
-        foreach (var g in groupedItems.OrderBy(g => g.Key))
+        var allPeriodKeys = invoiceItems.Select(i => GetPeriodKey(i.CreatedAt))
+            .Union(returnItems.Select(r => GetPeriodKey(r.CreatedAt)))
+            .Distinct()
+            .OrderBy(k => k)
+            .ToList();
+
+        foreach (var period in allPeriodKeys)
         {
-            var pSales = g.Sum(x => x.Revenue);
-            var pCost = g.Sum(x => x.Cost);
+            var pSales = invoiceItems
+                .Where(i => GetPeriodKey(i.CreatedAt) == period)
+                .Sum(i => i.Revenue);
+
+            var pReturns = returnItems
+                .Where(r => GetPeriodKey(r.CreatedAt) == period)
+                .Sum(r => r.RefundAmount);
+
+            var pNetSales = pSales - pReturns;
+
+            var pCost = invoiceItems
+                .Where(i => GetPeriodKey(i.CreatedAt) == period)
+                .Sum(i => i.Cost);
+
+            var pReturnedCost = returnItems
+                .Where(r => GetPeriodKey(r.CreatedAt) == period)
+                .Sum(r => r.ReturnedCost);
+
+            var pNetCost = Math.Max(0m, pCost - pReturnedCost);
+            var pGrossProfit = pNetSales - pNetCost;
+
             breakdown.Add(new ProfitLossPeriodRow
             {
-                Period = g.Key,
-                Sales = Math.Round(pSales, 2),
-                CostOfGoods = Math.Round(pCost, 2),
-                GrossProfit = Math.Round(pSales - pCost, 2),
-                Expenses = 0, // breakdown of expenses by period is not tracked granularly
-                NetProfit = Math.Round(pSales - pCost, 2)
+                Period = period,
+                Sales = Math.Round(pNetSales, 2),
+                CostOfGoods = Math.Round(pNetCost, 2),
+                GrossProfit = Math.Round(pGrossProfit, 2),
+                Expenses = 0,
+                NetProfit = Math.Round(pGrossProfit, 2)
             });
         }
 
@@ -156,19 +203,46 @@ public class GetSalesReportQueryHandler
             })
             .ToListAsync(ct);
 
+        var returnItems = await _db.ReturnInvoiceItems
+            .Where(ri => ri.ReturnInvoice.CreatedAt >= from && ri.ReturnInvoice.CreatedAt < to)
+            .Select(ri => new
+            {
+                ri.ProductId,
+                ri.Quantity,
+                Refund = ri.Quantity * ri.UnitPriceAtSale * (1m - ri.DiscountPercentage / 100m),
+                Cost = ri.IsDamaged ? 0m : ri.Quantity * ri.ConversionFactor * ri.InvoiceItem.UnitCostAtSale
+            })
+            .ToListAsync(ct);
+
+        var returnsByProduct = returnItems
+            .GroupBy(r => r.ProductId)
+            .ToDictionary(g => g.Key, g => new
+            {
+                Quantity = g.Sum(x => x.Quantity),
+                Refund = g.Sum(x => x.Refund),
+                Cost = g.Sum(x => x.Cost)
+            });
+
         var byProduct = items
             .GroupBy(i => new { i.ProductId, i.ProductName, i.Barcode, i.CategoryName })
             .Select(g =>
             {
-                var rev = g.Sum(x => x.Revenue);
-                var cost = g.Sum(x => x.Cost);
+                returnsByProduct.TryGetValue(g.Key.ProductId, out var ret);
+                var retQty = ret?.Quantity ?? 0;
+                var retRefund = ret?.Refund ?? 0m;
+                var retCost = ret?.Cost ?? 0m;
+
+                var rev = Math.Max(0m, g.Sum(x => x.Revenue) - retRefund);
+                var cost = Math.Max(0m, g.Sum(x => x.Cost) - retCost);
+                var qty = Math.Max(0, g.Sum(x => x.Quantity) - retQty);
+
                 return new SalesByProductRow
                 {
                     ProductId = g.Key.ProductId,
                     ProductName = g.Key.ProductName,
                     Barcode = g.Key.Barcode,
                     CategoryName = g.Key.CategoryName,
-                    QuantitySold = g.Sum(x => x.Quantity),
+                    QuantitySold = qty,
                     TotalRevenue = Math.Round(rev, 2),
                     TotalCost = Math.Round(cost, 2),
                     Profit = Math.Round(rev - cost, 2),
@@ -182,14 +256,22 @@ public class GetSalesReportQueryHandler
             .GroupBy(i => new { i.CategoryId, i.CategoryName })
             .Select(g =>
             {
-                var rev = g.Sum(x => x.Revenue);
-                var cost = g.Sum(x => x.Cost);
+                var catProductIds = g.Select(x => x.ProductId).ToHashSet();
+                var catReturns = returnItems.Where(r => catProductIds.Contains(r.ProductId)).ToList();
+                var retRefund = catReturns.Sum(r => r.Refund);
+                var retCost = catReturns.Sum(r => r.Cost);
+                var retQty = catReturns.Sum(r => r.Quantity);
+
+                var rev = Math.Max(0m, g.Sum(x => x.Revenue) - retRefund);
+                var cost = Math.Max(0m, g.Sum(x => x.Cost) - retCost);
+                var qty = Math.Max(0, g.Sum(x => x.Quantity) - retQty);
+
                 return new SalesByCategoryRow
                 {
                     CategoryId = g.Key.CategoryId,
                     CategoryName = g.Key.CategoryName,
-                    ProductCount = g.Select(x => x.ProductId).Distinct().Count(),
-                    QuantitySold = g.Sum(x => x.Quantity),
+                    ProductCount = catProductIds.Count,
+                    QuantitySold = qty,
                     TotalRevenue = Math.Round(rev, 2),
                     TotalCost = Math.Round(cost, 2),
                     Profit = Math.Round(rev - cost, 2)
@@ -198,7 +280,7 @@ public class GetSalesReportQueryHandler
             .OrderByDescending(c => c.TotalRevenue)
             .ToList();
 
-        var totalSales = items.Sum(i => i.Revenue);
+        var totalSales = Math.Max(0m, items.Sum(i => i.Revenue) - returnItems.Sum(r => r.Refund));
 
         return Result<SalesReportDto>.Success(new SalesReportDto
         {

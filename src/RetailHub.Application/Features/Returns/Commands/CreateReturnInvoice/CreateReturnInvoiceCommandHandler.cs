@@ -73,8 +73,16 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                     maxReturnable,
                     returnItem.Quantity));
 
-            // Refund uses the unit price (not base unit price)
-            totalRefundAmount += returnItem.Quantity * originalItem.UnitPriceAtSale;
+            // Refund uses the actual net discounted unit price paid by the customer
+            var effectiveUnitPrice = Math.Round(originalItem.NetUnitPrice, 2, MidpointRounding.AwayFromZero);
+            // If original invoice as a whole had an overall header discount not on the item
+            if (originalInvoice.DiscountPercent > 0 && originalItem.DiscountPercentage == 0)
+            {
+                effectiveUnitPrice = Math.Round(effectiveUnitPrice * (1m - (originalInvoice.DiscountPercent / 100m)), 2, MidpointRounding.AwayFromZero);
+            }
+
+            var lineRefund = Math.Round(returnItem.Quantity * effectiveUnitPrice, 2, MidpointRounding.AwayFromZero);
+            totalRefundAmount += lineRefund;
             affectedProductIds.Add(originalItem.ProductId);
         }
 
@@ -124,7 +132,7 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                 await _unitOfWork.StockMovements.AddAsync(damageMovement, ct);
             }
 
-            // Create ReturnInvoiceItem with unit snapshots from original
+            // Create ReturnInvoiceItem with unit snapshots and actual discount from original
             var returnInvoiceItem = ReturnInvoiceItem.Create(
                 returnInvoiceId: returnInvoice.Id,
                 invoiceItemId: originalItem.Id,
@@ -132,7 +140,7 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                 batchId: originalItem.BatchId,
                 quantity: returnItem.Quantity,
                 unitPriceAtSale: originalItem.UnitPriceAtSale,
-                discountPercentage: originalItem.DiscountPercentage,
+                discountPercentage: originalItem.DiscountPercentage > 0 ? originalItem.DiscountPercentage : originalInvoice.DiscountPercent,
                 isDamaged: returnItem.IsDamaged,
                 unitName: originalItem.UnitName,
                 conversionFactor: originalItem.ConversionFactor);
@@ -140,7 +148,7 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
             await _unitOfWork.ReturnInvoices.AddReturnItemAsync(returnInvoiceItem, ct);
         }
 
-        // ── 5. If credit invoice → adjust Customer.Balance ──
+        // ── 5. Payment & Balance Adjustment (Financial Accounting) ──
         if (originalInvoice.CustomerId.HasValue)
         {
             var customer = await _unitOfWork.Customers
@@ -148,10 +156,50 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
 
             if (customer is not null)
             {
-                // Decrease customer's debt by refund amount
-                customer.AdjustBalance(-totalRefundAmount);
-                _unitOfWork.Customers.Update(customer);
+                var unpaidAmount = Math.Max(0m, originalInvoice.TotalAmount - originalInvoice.AmountPaid);
+                if (unpaidAmount > 0)
+                {
+                    // Credit/partial sale: reduce debt up to unpaid balance
+                    var debtReduction = Math.Min(unpaidAmount, totalRefundAmount);
+                    customer.AdjustBalance(-debtReduction);
+                    _unitOfWork.Customers.Update(customer);
+
+                    // Any refund exceeding the unpaid balance was paid in cash and is returned to the customer
+                    var cashRefund = totalRefundAmount - debtReduction;
+                    if (cashRefund > 0)
+                    {
+                        var cashTransaction = CashDrawerTransaction.Create(
+                            CashDrawerTransactionType.Return,
+                            -cashRefund,
+                            referenceId: returnInvoice.Id,
+                            notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber} (نقدي)");
+
+                        await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
+                    }
+                }
+                else
+                {
+                    // Fully paid: customer receives cash refund directly
+                    var cashTransaction = CashDrawerTransaction.Create(
+                        CashDrawerTransactionType.Return,
+                        -totalRefundAmount,
+                        referenceId: returnInvoice.Id,
+                        notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber}");
+
+                    await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
+                }
             }
+        }
+        else if (totalRefundAmount > 0)
+        {
+            // Cash / Walk-in sale: refund cash from drawer
+            var cashTransaction = CashDrawerTransaction.Create(
+                CashDrawerTransactionType.Return,
+                -totalRefundAmount,
+                referenceId: returnInvoice.Id,
+                notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber}");
+
+            await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }
 
         // ── 6. Recalculate AverageCost for affected products ──
@@ -166,18 +214,6 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                 product.RecalculateAverageCost(updatedBatches);
                 _unitOfWork.Products.Update(product);
             }
-        }
-
-        // ── 6b. Record cash outflow in CashDrawer for cash refunds ──
-        if (!originalInvoice.CustomerId.HasValue && totalRefundAmount > 0)
-        {
-            var cashTransaction = CashDrawerTransaction.Create(
-                CashDrawerTransactionType.Return,
-                -totalRefundAmount,
-                referenceId: returnInvoice.Id,
-                notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber}");
-
-            await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }
 
         // ── 7. Atomic save ──
