@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RetailHub.API.Common;
@@ -6,15 +7,29 @@ using RetailHub.Infrastructure.Persistence;
 
 namespace RetailHub.API.Controllers;
 
+/// <summary>
+/// Seed controller — only available in Development environment.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
+[ApiExplorerSettings(IgnoreApi = true)]
 public class SeedController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
-    public SeedController(AppDbContext context)
+    public SeedController(AppDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
+    }
+
+    private IActionResult DevOnly()
+    {
+        if (!_env.IsDevelopment())
+            return NotFound();
+        return null!;
     }
 
     /// <summary>

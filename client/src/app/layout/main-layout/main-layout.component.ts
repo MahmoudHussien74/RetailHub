@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 interface NavItem {
   label: string;
@@ -36,9 +37,13 @@ export class MainLayoutComponent {
     { label: 'تسوية المخزون والتوالف', labelEn: 'Stock Adjustments', icon: 'adjust', route: '/stock-adjustments' },
   ];
 
-  constructor() {
+  constructor(public auth: AuthService) {
     this.updateClock();
     setInterval(() => this.updateClock(), 1000);
+  }
+
+  logout() {
+    this.auth.logout();
   }
 
   toggleSidebar() {

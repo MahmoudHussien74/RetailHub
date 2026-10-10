@@ -1,11 +1,13 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using RetailHub.Application.Interfaces;
 using RetailHub.Domain.Common;
 using RetailHub.Domain.Entities;
+using RetailHub.Infrastructure.Identity;
 
 namespace RetailHub.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext, IAppDbContext
+public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>, IAppDbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RetailHub.API.Common;
@@ -10,6 +11,7 @@ using RetailHub.Application.Features.Categories.Queries.GetCategoryById;
 
 namespace RetailHub.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase

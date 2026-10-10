@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RetailHub.API.Common;
@@ -9,6 +10,7 @@ using RetailHub.Application.Features.Shifts.Queries.GetShiftById;
 
 namespace RetailHub.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/shifts")]
 public class ShiftsController : ControllerBase

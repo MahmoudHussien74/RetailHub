@@ -11,7 +11,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       let message = 'حدث خطأ غير متوقع';
 
       if (error.status === 0) {
-        message = 'لا يمكن الاتصال بالسيرفر — تأكد من تشغيل الـ API';
+        message = 'تعذر الاتصال بالخادم — يرجى التحقق من عمل النظام أو إعادة المحاولة';
       } else if (error.status === 400) {
         // Validation errors
         if (error.error?.errors && Array.isArray(error.error.errors)) {

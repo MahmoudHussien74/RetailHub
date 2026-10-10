@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RetailHub.API.Common;
@@ -7,6 +8,7 @@ using RetailHub.Application.Features.CashDrawer.Queries.GetTransactions;
 
 namespace RetailHub.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/cash-drawer")]
 public class CashDrawerController : ControllerBase

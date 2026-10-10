@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RetailHub.API.Common;
@@ -8,6 +9,7 @@ using RetailHub.Application.Features.Employees.Queries.GetEmployees;
 
 namespace RetailHub.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class EmployeesController : ControllerBase
