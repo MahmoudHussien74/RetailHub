@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\RetailHub.Domain\RetailHub.Domain.csproj" />
     <ProjectReference Include="..\..\src\RetailHub.Application\RetailHub.Application.csproj" />
+    <ProjectReference Include="..\..\src\RetailHub.Infrastructure\RetailHub.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

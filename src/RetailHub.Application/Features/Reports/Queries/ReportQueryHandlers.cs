@@ -5,9 +5,7 @@ using RetailHub.Application.Common;
 using RetailHub.Application.Features.Reports.DTOs;
 using RetailHub.Application.Interfaces;
 using RetailHub.Domain.Enums;
-
 namespace RetailHub.Application.Features.Reports.Queries;
-
 // ═══════════════════════════════════════════════════════════════
 // 1. PROFIT & LOSS REPORT
 // ═══════════════════════════════════════════════════════════════
@@ -69,12 +67,21 @@ public class GetProfitLossReportQueryHandler
 
         // Operating Expenses from cash drawer
         // Strictly exclude purchase invoice payments to prevent double-counting inventory purchases
-        var expenses = await _db.CashDrawerTransactions
+        var purchaseInvoiceIds = await _db.PurchaseInvoices
+            .Where(p => p.PurchaseDate >= from && p.PurchaseDate < to)
+            .Select(p => p.Id)
+            .ToListAsync(ct);
+
+        var rawExpenses = await _db.CashDrawerTransactions
             .Where(c => c.Type == CashDrawerTransactionType.Expense
-                        && c.TransactionDate >= from && c.TransactionDate < to
-                        && (!c.ReferenceId.HasValue || !_db.PurchaseInvoices.Any(p => p.Id == c.ReferenceId.Value))
+                        && c.TransactionDate >= from && c.TransactionDate < to)
+            .Select(c => new { c.ReferenceId, c.Amount, c.Notes })
+            .ToListAsync(ct);
+
+        var expenses = rawExpenses
+            .Where(c => (!c.ReferenceId.HasValue || !purchaseInvoiceIds.Contains(c.ReferenceId.Value))
                         && (c.Notes == null || (!c.Notes.Contains("شراء") && !c.Notes.Contains("مشتريات"))))
-            .SumAsync(c => (decimal?)Math.Abs(c.Amount), ct) ?? 0m;
+            .Sum(c => Math.Abs(c.Amount));
 
         // Salary advances
         var salaryAdvances = await _db.SalaryAdvances
@@ -365,18 +372,26 @@ public class GetExpensesReportQueryHandler
         var from = request.FromDate.Date;
         var to = request.ToDate.Date.AddDays(1);
 
-        var expenses = await _db.CashDrawerTransactions
+        var rawExpenses = await _db.CashDrawerTransactions
             .Where(c => c.Type == CashDrawerTransactionType.Expense
                         && c.TransactionDate >= from && c.TransactionDate < to)
             .OrderByDescending(c => c.TransactionDate)
-            .Select(c => new ExpenseRow
+            .Select(c => new
             {
-                Id = c.Id,
+                c.Id,
                 Date = c.TransactionDate,
-                Amount = Math.Abs(c.Amount),
-                Notes = c.Notes
+                c.Amount,
+                c.Notes
             })
             .ToListAsync(ct);
+
+        var expenses = rawExpenses.Select(c => new ExpenseRow
+        {
+            Id = c.Id,
+            Date = c.Date,
+            Amount = Math.Abs(c.Amount),
+            Notes = c.Notes
+        }).ToList();
 
         var advances = await _db.SalaryAdvances
             .Where(s => s.AdvanceDate >= from && s.AdvanceDate < to)
@@ -516,21 +531,31 @@ public class GetInventoryAlertsReportQueryHandler
             .ToList();
 
         // Near-expiry batches
-        var nearExpiry = await _db.Batches
+        var rawNearExpiry = await _db.Batches
             .Where(b => b.Quantity > 0 && b.ExpiryDate <= expiryDate)
             .OrderBy(b => b.ExpiryDate)
-            .Select(b => new NearExpiryBatchRow
+            .Select(b => new
             {
-                BatchId = b.Id,
-                ProductId = b.ProductId,
+                b.Id,
+                b.ProductId,
                 ProductName = b.Product.NameAr,
                 Barcode = b.Product.Barcode,
-                Quantity = b.Quantity,
-                ExpiryDate = b.ExpiryDate,
-                DaysUntilExpiry = (int)(b.ExpiryDate - now).TotalDays,
-                ExpiryStatus = b.ExpiryDate < now ? "Expired" : (b.ExpiryDate - now).TotalDays <= 7 ? "Critical" : "Warning"
+                b.Quantity,
+                b.ExpiryDate
             })
             .ToListAsync(ct);
+
+        var nearExpiry = rawNearExpiry.Select(b => new NearExpiryBatchRow
+        {
+            BatchId = b.Id,
+            ProductId = b.ProductId,
+            ProductName = b.ProductName,
+            Barcode = b.Barcode,
+            Quantity = b.Quantity,
+            ExpiryDate = b.ExpiryDate,
+            DaysUntilExpiry = (int)(b.ExpiryDate - now).TotalDays,
+            ExpiryStatus = b.ExpiryDate < now ? "Expired" : (b.ExpiryDate - now).TotalDays <= 7 ? "Critical" : "Warning"
+        }).ToList();
 
         return Result<InventoryAlertsReportDto>.Success(new InventoryAlertsReportDto
         {
