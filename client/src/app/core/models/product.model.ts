@@ -52,7 +52,7 @@ export interface ProductDetailDto extends ProductListDto {
 }
 
 export interface CreateProductDto {
-  barcode: string;
+  barcode?: string | null;
   nameAr: string;
   nameEn?: string;
   categoryId: string;
@@ -65,6 +65,7 @@ export interface CreateProductDto {
 }
 
 export interface UpdateProductDto {
+  barcode?: string | null;
   nameAr: string;
   nameEn?: string;
   categoryId: string;

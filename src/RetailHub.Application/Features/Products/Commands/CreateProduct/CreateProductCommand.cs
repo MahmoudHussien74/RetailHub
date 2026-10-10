@@ -11,7 +11,7 @@ public record ProductUnitInputDto(
     bool IsDefaultSale = false);
 
 public record CreateProductCommand(
-    string Barcode,
+    string? Barcode,
     string NameAr,
     string? NameEn,
     Guid CategoryId,

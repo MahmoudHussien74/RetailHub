@@ -223,8 +223,8 @@ export class PrintService {
       </head>
       <body>
         <div class="center">
-          <div class="title">RetailHub Pharmacy</div>
-          <div class="sub">نظام إدارة الصيدلية ونقاط البيع</div>
+          <div class="title">RetailHub Store</div>
+          <div class="sub">نظام إدارة المبيعات ونقاط البيع</div>
           <div class="divider"></div>
           <h3 style="font-size:14px;font-weight:bold">تقرير إغلاق الوردية (Z-Report)</h3>
         </div>

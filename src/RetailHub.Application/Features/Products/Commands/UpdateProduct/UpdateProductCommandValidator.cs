@@ -10,6 +10,12 @@ public class UpdateProductCommandValidator : AbstractValidator<UpdateProductComm
     {
         RuleFor(x => x.Id).NotEmpty();
 
+        When(x => !string.IsNullOrWhiteSpace(x.Barcode), () =>
+        {
+            RuleFor(x => x.Barcode)
+                .MaximumLength(50);
+        });
+
         RuleFor(x => x.NameAr)
             .NotEmpty()
             .WithMessage(_ => string.Format(localizer[MessageKeys.RequiredField], localizer[MessageKeys.ProductNameAr]))

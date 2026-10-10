@@ -20,8 +20,12 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
     public async Task<Result<Guid>> Handle(CreateProductCommand request, CancellationToken ct)
     {
-        if (await _unitOfWork.Products.ExistsAsync(request.Barcode, ct))
-            return Result<Guid>.Failure(string.Format(_localizer[MessageKeys.ProductBarcodeExists], request.Barcode));
+        var barcode = string.IsNullOrWhiteSpace(request.Barcode)
+            ? null
+            : request.Barcode.Trim();
+
+        if (barcode != null && await _unitOfWork.Products.ExistsAsync(barcode, ct))
+            return Result<Guid>.Failure(string.Format(_localizer[MessageKeys.ProductBarcodeExists], barcode));
 
         if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId, ct))
             return Result<Guid>.Failure(_localizer[MessageKeys.CategoryNotFound]);
@@ -30,7 +34,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             return Result<Guid>.Failure(_localizer[MessageKeys.BrandNotFound]);
 
         var product = Product.Create(
-            request.Barcode,
+            barcode,
             request.NameAr,
             request.NameEn,
             request.CategoryId,
@@ -46,12 +50,16 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             {
                 var u = request.Units[i];
                 var isDefault = hasDefault ? u.IsDefaultSale : (i == 0);
+                var unitBarcode = u.Barcode;
+                if (string.IsNullOrWhiteSpace(unitBarcode) && isDefault)
+                    unitBarcode = barcode;
+
                 var unit = ProductUnit.Create(
                     product.Id,
                     u.Name,
                     u.ConversionFactor,
                     u.SalePrice,
-                    u.Barcode,
+                    unitBarcode,
                     isDefault);
 
                 await _unitOfWork.ProductUnits.AddAsync(unit, ct);
@@ -59,13 +67,13 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         }
         else
         {
-            // Create default "علبة" unit with base conversion factor 1
+            // Create default unit with base conversion factor 1
             var defaultUnit = ProductUnit.Create(
                 product.Id,
                 "علبة",
                 conversionFactor: 1,
                 salePrice: request.SellingPrice,
-                barcode: request.Barcode,
+                barcode: barcode,
                 isDefaultSale: true);
 
             await _unitOfWork.ProductUnits.AddAsync(defaultUnit, ct);
@@ -97,5 +105,16 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(product.Id);
+    }
+
+    private async Task<string> GenerateUniqueBarcodeAsync(CancellationToken ct)
+    {
+        string generated;
+        do
+        {
+            generated = Random.Shared.NextInt64(100000000000, 999999999999).ToString();
+        } while (await _unitOfWork.Products.ExistsAsync(generated, ct));
+
+        return generated;
     }
 }

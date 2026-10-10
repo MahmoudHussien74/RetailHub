@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RetailHub.API.Common;
@@ -15,6 +16,7 @@ using RetailHub.Application.Features.ProductUnits.DTOs;
 
 namespace RetailHub.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ProductsController : ControllerBase
@@ -85,6 +87,7 @@ public class ProductsController : ControllerBase
     {
         var command = new UpdateProductCommand(
             id,
+            request.Barcode,
             request.NameAr,
             request.NameEn,
             request.CategoryId,

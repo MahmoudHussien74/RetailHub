@@ -8,10 +8,11 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
 {
     public CreateProductCommandValidator(IStringLocalizer<Messages> localizer)
     {
-        RuleFor(x => x.Barcode)
-            .NotEmpty()
-            .WithMessage(_ => string.Format(localizer[MessageKeys.RequiredField], localizer[MessageKeys.ProductBarcode]))
-            .MaximumLength(50);
+        When(x => !string.IsNullOrWhiteSpace(x.Barcode), () =>
+        {
+            RuleFor(x => x.Barcode)
+                .MaximumLength(50);
+        });
 
         RuleFor(x => x.NameAr)
             .NotEmpty()

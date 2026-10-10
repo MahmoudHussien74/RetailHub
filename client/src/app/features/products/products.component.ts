@@ -278,7 +278,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                     <td class="px-5 py-3.5">
                       <div class="flex items-center gap-2">
                         <button (click)="openUnitsModal(product)"
-                          title="إدارة وحدات البيع (علبة / شريط / قرص)"
+                          title="إدارة وحدات البيع وتجزئة الأسعار"
                           class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         </button>
@@ -337,9 +337,12 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
             </div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1.5">الباركود *</label>
-                <input type="text" [(ngModel)]="formBarcode" [disabled]="!!editingProduct()"
-                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 disabled:bg-slate-100 disabled:text-slate-400"/>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-bold text-slate-500">الباركود (اختياري)</label>
+                  <span class="text-[10px] text-slate-400 font-medium">يمكنك تركه فارغاً إذا كان المنتج بدون باركود</span>
+                </div>
+                <input type="text" [(ngModel)]="formBarcode" placeholder="أدخل الباركود أو اتركه فارغاً"
+                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-mono font-bold text-slate-700"/>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -398,12 +401,12 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
               @if (!editingProduct()) {
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">سعر الشراء (التكلفة للعلبة) ج.م</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">سعر الشراء (التكلفة) ج.م</label>
                     <input type="number" [(ngModel)]="formPurchasePrice" placeholder="مثلاً: 100.00" min="0" step="0.5"
                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-bold text-slate-800"/>
                   </div>
                   <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">سعر بيع العلبة للجمهور * ج.م</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">سعر البيع للجمهور * ج.م</label>
                     <input type="number" [(ngModel)]="formSellingPrice" (ngModelChange)="onBoxPriceChange()"
                       placeholder="مثلاً: 135.00" min="0" step="0.5"
                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-black text-emerald-700"/>
@@ -412,7 +415,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 
                 @if (formPurchasePrice && formSellingPrice && formSellingPrice > formPurchasePrice) {
                   <div class="px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-between text-xs text-emerald-900">
-                    <span>الربح المتوقع للعلبة: <b>{{ (formSellingPrice - formPurchasePrice) | number:'1.2-2' }} ج.م</b></span>
+                    <span>الربح المتوقع: <b>{{ (formSellingPrice - formPurchasePrice) | number:'1.2-2' }} ج.م</b></span>
                     <span class="font-bold bg-white px-2 py-0.5 rounded-md border border-emerald-200">
                       هامش ربح: {{ (((formSellingPrice - formPurchasePrice) / formPurchasePrice) * 100) | number:'1.1-1' }}%
                     </span>
@@ -426,12 +429,12 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                       <input type="number" [(ngModel)]="formInitialStock" placeholder="الكمية المتوفرة" min="0"
                         class="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-bold text-slate-800"/>
                       <select [(ngModel)]="formInitialStockUnit" class="w-28 px-2 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/30">
-                        <option value="box">علبة</option>
+                        <option value="box">{{ formMainUnitName || 'الوحدة الكبرى' }}</option>
                         @if (enableSubUnits && stripsPerBox) {
-                          <option value="strip">شريط</option>
+                          <option value="strip">{{ formSubUnitName || 'وحدة فرعية' }}</option>
                         }
                         @if (enableSubUnits && (tabletsPerBox || stripsPerBox)) {
-                          <option value="tablet">قرص</option>
+                          <option value="tablet">{{ formSmallestUnitName || 'أصغر وحدة' }}</option>
                         }
                       </select>
                     </div>
@@ -452,10 +455,10 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                      <span class="text-sm">💊</span>
+                      <span class="text-sm">📦</span>
                       <div>
-                        <span class="text-xs font-bold text-slate-800 block">تجزئة البيع (أشرطة / أقراص)</span>
-                        <span class="text-[11px] text-slate-400">تحديد أسعار الوحدات تلقائياً مع إمكانية التعديل</span>
+                        <span class="text-xs font-bold text-slate-800 block">وحدات وتجزئة البيع</span>
+                        <span class="text-[11px] text-slate-400">تسمية الوحدات وتجزئتها لقطع أصغر بأسعار خاصة</span>
                       </div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -464,47 +467,78 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                     </label>
                   </div>
 
+                  <!-- Main Unit Name -->
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">اسم الوحدة الرئيسية</label>
+                    <div class="flex gap-2">
+                      <input type="text" [(ngModel)]="formMainUnitName" placeholder="مثلاً: علبة / كرتونة / طقم / قطعة"
+                        class="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-bold bg-white"/>
+                      <div class="flex gap-1">
+                        <button type="button" (click)="formMainUnitName = 'علبة'" class="px-2 py-1 text-[11px] rounded bg-white border border-slate-200 hover:bg-slate-100 font-medium">علبة</button>
+                        <button type="button" (click)="formMainUnitName = 'كرتونة'" class="px-2 py-1 text-[11px] rounded bg-white border border-slate-200 hover:bg-slate-100 font-medium">كرتونة</button>
+                        <button type="button" (click)="formMainUnitName = 'طقم'" class="px-2 py-1 text-[11px] rounded bg-white border border-slate-200 hover:bg-slate-100 font-medium">طقم</button>
+                        <button type="button" (click)="formMainUnitName = 'قطعة'" class="px-2 py-1 text-[11px] rounded bg-white border border-slate-200 hover:bg-slate-100 font-medium">قطعة</button>
+                      </div>
+                    </div>
+                  </div>
+
                   @if (enableSubUnits) {
                     <div class="pt-2 border-t border-slate-200 space-y-3">
-                      <!-- Strips Breakdown -->
-                      <div class="grid grid-cols-2 gap-3 items-end bg-white p-3 rounded-xl border border-slate-100">
-                        <div>
-                          <label class="block text-[11px] font-bold text-slate-600 mb-1">عدد الشرائط بالعلبة</label>
-                          <input type="number" [(ngModel)]="stripsPerBox" (ngModelChange)="onStripsCountChange()" min="1" placeholder="مثلاً: 2"
-                            class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-bold"/>
-                        </div>
-                        <div>
-                          <div class="flex justify-between items-center mb-1">
-                            <label class="text-[11px] font-bold text-slate-600">سعر بيع الشريط</label>
-                            @if (stripPrice != null) {
-                              <span class="text-[10px] text-emerald-600 font-bold">
-                                {{ customStripPriceSet ? '(سعر مخصص)' : '(محسوب تلقائياً)' }}
-                              </span>
-                            }
+                      <!-- Sub-unit Breakdown -->
+                      <div class="bg-white p-3 rounded-xl border border-slate-100 space-y-2">
+                        <span class="text-xs font-bold text-slate-700 block">وحدة تجزئة فرعية (اختياري - مثلاً: دستة / باكت / شريط)</span>
+                        <div class="grid grid-cols-3 gap-2 items-end">
+                          <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">اسم الوحدة</label>
+                            <input type="text" [(ngModel)]="formSubUnitName" placeholder="مثلاً: باكت"
+                              class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-bold"/>
                           </div>
-                          <input type="number" [(ngModel)]="stripPrice" (input)="onStripPriceManualEdit()" min="0" placeholder="0.00"
-                            class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-black text-emerald-700"/>
+                          <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">عددها في الـ {{ formMainUnitName || 'علبة' }}</label>
+                            <input type="number" [(ngModel)]="stripsPerBox" (ngModelChange)="onStripsCountChange()" min="1" placeholder="مثلاً: 2"
+                              class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-bold"/>
+                          </div>
+                          <div>
+                            <div class="flex justify-between items-center mb-1">
+                              <label class="text-[10px] font-bold text-slate-500">سعر البيع</label>
+                              @if (stripPrice != null) {
+                                <span class="text-[9px] text-emerald-600 font-bold">
+                                  {{ customStripPriceSet ? '(مخصص)' : '(محسوب)' }}
+                                </span>
+                              }
+                            </div>
+                            <input type="number" [(ngModel)]="stripPrice" (input)="onStripPriceManualEdit()" min="0" placeholder="0.00"
+                              class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-black text-emerald-700"/>
+                          </div>
                         </div>
                       </div>
 
-                      <!-- Tablets Breakdown -->
-                      <div class="grid grid-cols-2 gap-3 items-end bg-white p-3 rounded-xl border border-slate-100">
-                        <div>
-                          <label class="block text-[11px] font-bold text-slate-600 mb-1">إجمالي الأقراص بالعلبة</label>
-                          <input type="number" [(ngModel)]="tabletsPerBox" (ngModelChange)="onTabletsCountChange()" min="1" placeholder="مثلاً: 14"
-                            class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-bold"/>
-                        </div>
-                        <div>
-                          <div class="flex justify-between items-center mb-1">
-                            <label class="text-[11px] font-bold text-slate-600">سعر بيع القرص</label>
-                            @if (tabletPrice != null) {
-                              <span class="text-[10px] text-emerald-600 font-bold">
-                                {{ customTabletPriceSet ? '(سعر مخصص)' : '(محسوب تلقائياً)' }}
-                              </span>
-                            }
+                      <!-- Smallest Unit Breakdown -->
+                      <div class="bg-white p-3 rounded-xl border border-slate-100 space-y-2">
+                        <span class="text-xs font-bold text-slate-700 block">أصغر وحدة تجزئة (مثلاً: قطعة / حبة / مل)</span>
+                        <div class="grid grid-cols-3 gap-2 items-end">
+                          <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">اسم الوحدة</label>
+                            <input type="text" [(ngModel)]="formSmallestUnitName" placeholder="مثلاً: قطعة"
+                              class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-bold"/>
                           </div>
-                          <input type="number" [(ngModel)]="tabletPrice" (input)="onTabletPriceManualEdit()" min="0" placeholder="0.00"
-                            class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-black text-emerald-700"/>
+                          <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">العدد في الـ {{ formMainUnitName || 'علبة' }}</label>
+                            <input type="number" [(ngModel)]="tabletsPerBox" (ngModelChange)="onTabletsCountChange()" min="1" placeholder="مثلاً: 12"
+                              class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-bold"/>
+                          </div>
+                          <div>
+                            <div class="flex justify-between items-center mb-1">
+                              <label class="text-[10px] font-bold text-slate-500">سعر البيع</label>
+                              @if (tabletPrice != null) {
+                                <span class="text-[9px] text-emerald-600 font-bold">
+                                  {{ customTabletPriceSet ? '(مخصص)' : '(محسوب)' }}
+                                </span>
+                              }
+                            </div>
+                            <input type="number" [(ngModel)]="tabletPrice" (input)="onTabletPriceManualEdit()" min="0" placeholder="0.00"
+                              class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-black text-emerald-700"/>
+                          </div>
                         </div>
                       </div>
 
@@ -512,12 +546,12 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                       <div class="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-lg text-xs text-emerald-900 flex items-center justify-between">
                         <span class="font-bold">الوحدات التي ستتاح للبيع:</span>
                         <span class="font-semibold text-[11px]">
-                          علبة ({{ formSellingPrice | number:'1.2-2' }})
+                          {{ formMainUnitName || 'علبة' }} ({{ formSellingPrice | number:'1.2-2' }})
                           @if (stripsPerBox && stripPrice) {
-                            + شريط ({{ stripPrice | number:'1.2-2' }})
+                            + {{ formSubUnitName || 'وحدة فرعية' }} ({{ stripPrice | number:'1.2-2' }})
                           }
                           @if (tabletsPerBox && tabletPrice) {
-                            + قرص ({{ tabletPrice | number:'1.2-2' }})
+                            + {{ formSmallestUnitName || 'أصغر وحدة' }} ({{ tabletPrice | number:'1.2-2' }})
                           }
                         </span>
                       </div>
@@ -557,13 +591,13 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                 <h4 class="text-xs font-black text-slate-700 uppercase">{{ editingUnitId ? 'تعديل وحدة' : 'إضافة وحدة جديدة' }}</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">اسم الوحدة * (علبة، شريط، قرص)</label>
-                    <input type="text" [(ngModel)]="unitFormName" placeholder="مثلاً: شريط"
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">اسم الوحدة * (مثلاً: قطعة، باكت، دستة، علبة)</label>
+                    <input type="text" [(ngModel)]="unitFormName" placeholder="مثلاً: قطعة أو دستة"
                       class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"/>
                   </div>
                   <div>
-                    <label class="block text-[11px] font-bold text-slate-500 mb-1">معامل التحويل * (كم وحدة أساسية)</label>
-                    <input type="number" [(ngModel)]="unitFormFactor" min="1" placeholder="مثلاً: 10"
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">معامل التحويل * (عدد أصغر وحدة بها)</label>
+                    <input type="number" [(ngModel)]="unitFormFactor" min="1" placeholder="مثلاً: 12"
                       class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"/>
                   </div>
                   <div>
@@ -576,7 +610,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                   <div>
                     <label class="block text-[11px] font-bold text-slate-500 mb-1">باركود خاص بهذه الوحدة (اختياري)</label>
-                    <input type="text" [(ngModel)]="unitFormBarcode" placeholder="باركود الشريط إن وجد"
+                    <input type="text" [(ngModel)]="unitFormBarcode" placeholder="باركود الوحدة إن وجد"
                       class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"/>
                   </div>
                   <div class="flex items-center gap-2 pt-4">
@@ -615,7 +649,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                     @for (unit of productUnits(); track unit.id) {
                       <tr class="hover:bg-slate-50/50">
                         <td class="p-3 font-bold text-slate-800">{{ unit.name }}</td>
-                        <td class="p-3 text-slate-600">{{ unit.conversionFactor }} قرص/وحدة</td>
+                        <td class="p-3 text-slate-600">{{ unit.conversionFactor }} وحدة أساسية</td>
                         <td class="p-3 font-black text-emerald-600">{{ unit.salePrice | number:'1.2-2' }} ج.م</td>
                         <td class="p-3 font-mono text-[11px] text-slate-500">{{ unit.barcode || '—' }}</td>
                         <td class="p-3">
@@ -754,6 +788,9 @@ export class ProductsComponent implements OnInit {
 
   // Sub-units breakdown state during product creation
   enableSubUnits = false;
+  formMainUnitName = 'علبة';
+  formSubUnitName = 'باكت';
+  formSmallestUnitName = 'قطعة';
   stripsPerBox: number | null = null;
   tabletsPerBox: number | null = null;
   stripPrice: number | null = null;
@@ -998,6 +1035,9 @@ export class ProductsComponent implements OnInit {
     this.formInitialStockUnit = 'box';
     this.formExpiryDate = '';
     this.enableSubUnits = false;
+    this.formMainUnitName = 'علبة';
+    this.formSubUnitName = 'باكت';
+    this.formSmallestUnitName = 'قطعة';
     this.stripsPerBox = null;
     this.tabletsPerBox = null;
     this.stripPrice = null;
@@ -1032,7 +1072,9 @@ export class ProductsComponent implements OnInit {
     this.saving.set(true);
 
     if (this.editingProduct()) {
+      const cleanBarcode = this.formBarcode.trim();
       const dto: UpdateProductDto = {
+        barcode: cleanBarcode ? cleanBarcode : null,
         nameAr: this.formNameAr,
         nameEn: this.formNameEn || undefined,
         categoryId: this.formCategoryId,
@@ -1046,82 +1088,88 @@ export class ProductsComponent implements OnInit {
           this.loadProducts();
           this.loadInventoryStats();
         },
-        error: () => this.saving.set(false)
+        error: (err) => {
+          this.saving.set(false);
+          this.notify.error(err?.error?.message || 'تعذر تعديل المنتج');
+        }
       });
     } else {
-      if (!this.formBarcode.trim() || !this.formSellingPrice) {
-        this.notify.error('يرجى ملء الباركود وسعر البيع');
+      if (!this.formSellingPrice || this.formSellingPrice <= 0) {
+        this.notify.error('يرجى تحديد سعر بيع صحيح للمنتج');
         this.saving.set(false);
         return;
       }
 
+      const cleanBarcode = this.formBarcode.trim() ? this.formBarcode.trim() : '';
+      this.formBarcode = cleanBarcode;
+
       const units: CreateProductUnitRequest[] = [];
 
       if (this.enableSubUnits && (this.tabletsPerBox || this.stripsPerBox)) {
-        // If tablets are defined, tablets are the base unit (factor 1)
+        // If smallest units are defined, they are the base unit (factor 1)
         if (this.tabletsPerBox && this.tabletsPerBox > 0) {
-          const totalTablets = Number(this.tabletsPerBox);
+          const totalSmallest = Number(this.tabletsPerBox);
           const boxPrice = Number(this.formSellingPrice);
-          const tabletSalePrice = this.tabletPrice != null ? Number(this.tabletPrice) : Math.round((boxPrice / totalTablets) * 100) / 100;
+          const smallestSalePrice = this.tabletPrice != null ? Number(this.tabletPrice) : Math.round((boxPrice / totalSmallest) * 100) / 100;
 
-          // 1. Box Unit
+          // 1. Main Unit (Box / Carton / Set)
           units.push({
-            name: 'علبة',
-            conversionFactor: totalTablets,
+            name: this.formMainUnitName.trim() || 'علبة',
+            conversionFactor: totalSmallest,
             salePrice: boxPrice,
-            barcode: this.formBarcode,
+            barcode: this.formBarcode || undefined,
             isDefaultSale: true
           });
 
-          // 2. Strip Unit (if strips defined)
+          // 2. Intermediate Sub-unit (if defined)
           if (this.stripsPerBox && this.stripsPerBox > 0) {
-            const numStrips = Number(this.stripsPerBox);
-            const tabletsPerStrip = Math.max(1, Math.round(totalTablets / numStrips));
-            const stripSalePrice = this.stripPrice != null ? Number(this.stripPrice) : Math.round((boxPrice / numStrips) * 100) / 100;
+            const numSubUnits = Number(this.stripsPerBox);
+            const smallestPerSub = Math.max(1, Math.round(totalSmallest / numSubUnits));
+            const subSalePrice = this.stripPrice != null ? Number(this.stripPrice) : Math.round((boxPrice / numSubUnits) * 100) / 100;
             units.push({
-              name: 'شريط',
-              conversionFactor: tabletsPerStrip,
-              salePrice: stripSalePrice,
+              name: this.formSubUnitName.trim() || 'وحدة فرعية',
+              conversionFactor: smallestPerSub,
+              salePrice: subSalePrice,
               isDefaultSale: false
             });
           }
 
-          // 3. Tablet Unit
+          // 3. Smallest Unit
           units.push({
-            name: 'قرص',
+            name: this.formSmallestUnitName.trim() || 'قطعة',
             conversionFactor: 1,
-            salePrice: tabletSalePrice,
+            salePrice: smallestSalePrice,
             isDefaultSale: false
           });
         }
         else if (this.stripsPerBox && this.stripsPerBox > 0) {
-          // Only strips
-          const numStrips = Number(this.stripsPerBox);
+          // Only sub units
+          const numSubUnits = Number(this.stripsPerBox);
           const boxPrice = Number(this.formSellingPrice);
-          const stripSalePrice = this.stripPrice != null ? Number(this.stripPrice) : Math.round((boxPrice / numStrips) * 100) / 100;
+          const subSalePrice = this.stripPrice != null ? Number(this.stripPrice) : Math.round((boxPrice / numSubUnits) * 100) / 100;
 
           units.push({
-            name: 'علبة',
-            conversionFactor: numStrips,
+            name: this.formMainUnitName.trim() || 'علبة',
+            conversionFactor: numSubUnits,
             salePrice: boxPrice,
-            barcode: this.formBarcode,
+            barcode: this.formBarcode || undefined,
             isDefaultSale: true
           });
 
           units.push({
-            name: 'شريط',
+            name: this.formSubUnitName.trim() || 'قطعة',
             conversionFactor: 1,
-            salePrice: stripSalePrice,
+            salePrice: subSalePrice,
             isDefaultSale: false
           });
         }
       } else {
-        // Simple default box unit
+        // Simple default unit
         units.push({
-          name: 'علبة',
+          name: this.formMainUnitName.trim() || 'قطعة',
           conversionFactor: 1,
           salePrice: Number(this.formSellingPrice),
-          barcode: this.formBarcode,
+          barcode: this.formBarcode || undefined,
           isDefaultSale: true
         });
       }
@@ -1148,7 +1196,7 @@ export class ProductsComponent implements OnInit {
       }
 
       const dto: CreateProductDto = {
-        barcode: this.formBarcode,
+        barcode: this.formBarcode || null,
         nameAr: this.formNameAr,
         nameEn: this.formNameEn || undefined,
         categoryId: this.formCategoryId,

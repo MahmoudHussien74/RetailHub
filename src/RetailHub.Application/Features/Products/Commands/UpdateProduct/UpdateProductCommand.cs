@@ -5,6 +5,7 @@ namespace RetailHub.Application.Features.Products.Commands.UpdateProduct;
 
 public record UpdateProductCommand(
     Guid Id,
+    string? Barcode,
     string NameAr,
     string? NameEn,
     Guid CategoryId,

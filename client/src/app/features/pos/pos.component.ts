@@ -233,7 +233,7 @@ import { CategoryComboboxComponent } from './components/category-combobox/catego
                     type="button"
                     (click)="openAddUnitModal(item)"
                     class="text-[10px] px-1.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-bold transition-all flex items-center gap-0.5"
-                    title="إضافة وحدة جديدة للصنف (شريط/قرص)">
+                    title="إضافة وحدة بيع جديدة للصنف">
                     <span>+ وحدة</span>
                   </button>
                 </div>
@@ -464,7 +464,7 @@ import { CategoryComboboxComponent } from './components/category-combobox/catego
                 <label class="text-xs font-black text-slate-700">اختر وحدة البيع المطلوبة:</label>
                 <button (click)="showQuickAddUnit.set(!showQuickAddUnit())"
                   class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                  <span>{{ showQuickAddUnit() ? 'إلغاء' : '+ إضافة وحدة جديدة (شريط/قرص)' }}</span>
+                  <span>{{ showQuickAddUnit() ? 'إلغاء' : '+ إضافة وحدة جديدة (دستة/باكت/قطعة)' }}</span>
                 </button>
               </div>
 
@@ -501,7 +501,7 @@ import { CategoryComboboxComponent } from './components/category-combobox/catego
                 <div class="grid grid-cols-3 gap-2">
                   <div>
                     <label class="block text-[10px] font-bold text-slate-600 mb-0.5">اسم الوحدة</label>
-                    <input type="text" [(ngModel)]="quickUnitName" placeholder="شريط / قرص"
+                    <input type="text" [(ngModel)]="quickUnitName" placeholder="مثلاً: قطعة / باكت / دستة"
                       class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500"/>
                   </div>
                   <div>

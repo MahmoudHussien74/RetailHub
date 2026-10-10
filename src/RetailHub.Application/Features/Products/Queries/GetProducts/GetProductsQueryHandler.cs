@@ -26,7 +26,7 @@ public class GetProductsQueryHandler
         {
             var search = request.Search.Trim();
             query = query.Where(p =>
-                p.Barcode.Contains(search) ||
+                (p.Barcode != null && p.Barcode.Contains(search)) ||
                 p.NameAr.Contains(search) ||
                 (p.NameEn != null && p.NameEn.Contains(search)));
         }

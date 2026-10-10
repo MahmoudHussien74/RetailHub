@@ -347,7 +347,7 @@ import { CategoryDto, BrandDto } from '../../core/models/category-brand.model';
             <div class="p-6 space-y-4">
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">اسم المنتج بالعربي *</label>
-                <input type="text" [(ngModel)]="quickNameAr" placeholder="مثلاً: كتافلام 50 مجم 20 قرص"
+                <input type="text" [(ngModel)]="quickNameAr" placeholder="مثلاً: سيروم مرطب للبشرة 50 مل أو روج مات"
                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 font-semibold"/>
               </div>
 

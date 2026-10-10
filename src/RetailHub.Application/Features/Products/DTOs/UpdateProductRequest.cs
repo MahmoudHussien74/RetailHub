@@ -5,6 +5,7 @@ namespace RetailHub.Application.Features.Products.DTOs;
 /// Product Id is supplied via URL route, not body.
 /// </summary>
 public record UpdateProductRequest(
+    string? Barcode,
     string NameAr,
     string? NameEn,
     Guid CategoryId,

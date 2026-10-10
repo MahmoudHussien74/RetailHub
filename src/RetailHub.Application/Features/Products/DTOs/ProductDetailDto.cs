@@ -6,7 +6,7 @@ namespace RetailHub.Application.Features.Products.DTOs;
 public class ProductDetailDto
 {
     public Guid Id { get; init; }
-    public string Barcode { get; init; } = string.Empty;
+    public string? Barcode { get; init; }
     public string NameAr { get; init; } = string.Empty;
     public string? NameEn { get; init; }
     public Guid CategoryId { get; init; }

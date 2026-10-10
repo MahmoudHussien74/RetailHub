@@ -73,10 +73,11 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                     <td class="px-5 py-3.5 text-sm text-slate-500">{{ inv.createdAt | date:'yyyy/MM/dd - hh:mm a' }}</td>
                     <td class="px-5 py-3.5 text-sm text-slate-600 font-semibold">{{ inv.itemCount }} صنف</td>
                     <td class="px-5 py-3.5 text-sm text-slate-600 font-medium">{{ (inv.subtotal || inv.totalAmount) | number:'1.2-2' }} ج.م</td>
-                    <td class="px-5 py-3.5 text-sm font-semibold">
+                    <td class="px-5 py-3.5 text-sm font-semibold whitespace-nowrap">
                       @if (inv.discountAmount > 0) {
-                        <span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg text-xs font-bold border border-amber-200">
-                          -{{ inv.discountAmount | number:'1.2-2' }} ج.م ({{ inv.discountPercent }}%)
+                        <span class="inline-flex items-center gap-1 text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded-lg text-xs font-bold border border-amber-300" dir="ltr">
+                          <span>-{{ inv.discountAmount | number:'1.2-2' }} ج.م</span>
+                          <span class="text-[10px] text-amber-700 font-semibold">({{ inv.discountPercent }}%)</span>
                         </span>
                       } @else {
                         <span class="text-slate-400 text-xs">—</span>
@@ -166,17 +167,17 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
       <!-- Invoice Detail Modal -->
       @if (selectedInvoice()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" (click)="selectedInvoice.set(null)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] overflow-auto" (click)="$event.stopPropagation()">
-            <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 flex items-center justify-between sticky top-0 z-10">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col overflow-hidden animate-scale-in" (click)="$event.stopPropagation()">
+            <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 flex items-center justify-between flex-shrink-0">
               <div>
                 <h3 class="text-lg font-bold text-white">تفاصيل الفاتورة</h3>
                 <p class="text-sm text-slate-300 mt-0.5">{{ selectedInvoice()!.invoiceNumber }}</p>
               </div>
-              <button (click)="selectedInvoice.set(null)" class="text-slate-400 hover:text-white transition-colors">
+              <button (click)="selectedInvoice.set(null)" class="text-slate-400 hover:text-white transition-colors p-1.5 hover:bg-slate-700/50 rounded-lg">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>
-            <div class="p-6 space-y-5">
+            <div class="p-6 space-y-5 overflow-y-auto flex-1">
               <!-- Return Status Banner if present -->
               @if (selectedInvoice()!.hasReturns) {
                 <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between text-xs text-purple-900">
@@ -184,7 +185,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                     <span class="w-2 h-2 rounded-full bg-purple-600"></span>
                     <span>{{ selectedInvoice()!.isFullyReturned ? 'تم إرجاع هذه الفاتورة بالكامل' : 'تم عمل مرتجع جزئي على هذه الفاتورة' }}</span>
                   </div>
-                  <span class="bg-purple-200/70 text-purple-800 px-2.5 py-1 rounded-lg font-black">
+                  <span class="bg-purple-200/70 text-purple-800 px-2.5 py-1 rounded-lg font-black whitespace-nowrap">
                     المبلغ المسترد: {{ selectedInvoice()!.totalRefunded | number:'1.2-2' }} ج.م
                   </span>
                 </div>
@@ -198,11 +199,12 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
                 </div>
                 <div class="bg-amber-50 rounded-xl p-3.5 border border-amber-100">
                   <span class="text-xs text-amber-700 font-semibold block">قيمة الخصم</span>
-                  <p class="text-base font-black text-amber-800 mt-1">
+                  <p class="text-base font-black text-amber-800 mt-1 flex items-baseline gap-1.5">
                     @if (selectedInvoice()!.discountAmount > 0) {
-                      -{{ selectedInvoice()!.discountAmount | number:'1.2-2' }} <span class="text-xs font-bold">({{ selectedInvoice()!.discountPercent }}%)</span>
+                      <span dir="ltr">-{{ selectedInvoice()!.discountAmount | number:'1.2-2' }}</span>
+                      <span class="text-xs font-bold text-amber-600">({{ selectedInvoice()!.discountPercent }}%)</span>
                     } @else {
-                      0.00 ج.م
+                      <span>0.00 ج.م</span>
                     }
                   </p>
                 </div>
@@ -225,45 +227,49 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
               }
 
               <!-- Items Table -->
-              <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
                 <table class="w-full">
                   <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-bold">
-                      <th class="text-right px-4 py-2.5">المنتج</th>
-                      <th class="text-center px-4 py-2.5">الوحدة</th>
-                      <th class="text-center px-4 py-2.5">الكمية المباعة</th>
-                      <th class="text-center px-4 py-2.5">المرتجع</th>
-                      <th class="text-right px-4 py-2.5">السعر</th>
-                      <th class="text-right px-4 py-2.5">الخصم</th>
-                      <th class="text-right px-4 py-2.5">الإجمالي</th>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-600 font-bold">
+                      <th class="text-right px-4 py-3 min-w-[140px]">المنتج</th>
+                      <th class="text-center px-3 py-3 whitespace-nowrap">الوحدة</th>
+                      <th class="text-center px-3 py-3 whitespace-nowrap">الكمية المباعة</th>
+                      <th class="text-center px-3 py-3 whitespace-nowrap">المرتجع</th>
+                      <th class="text-center px-3 py-3 whitespace-nowrap">السعر</th>
+                      <th class="text-center px-3 py-3 whitespace-nowrap">الخصم</th>
+                      <th class="text-left px-4 py-3 whitespace-nowrap">الإجمالي</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 text-xs">
                     @for (item of selectedInvoice()!.items; track item.id) {
-                      <tr [class.bg-purple-50/20]="item.returnedQuantity && item.returnedQuantity > 0">
-                        <td class="px-4 py-3 font-semibold text-slate-800">{{ item.productNameAr }}</td>
-                        <td class="px-4 py-3 text-center text-slate-500 font-medium">{{ item.unitName || 'وحدة' }}</td>
-                        <td class="px-4 py-3 text-center text-slate-700 font-bold">{{ item.quantity }}</td>
-                        <td class="px-4 py-3 text-center">
+                      <tr [class.bg-purple-50/20]="item.returnedQuantity && item.returnedQuantity > 0" class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-4 py-3.5 font-semibold text-slate-800">{{ item.productNameAr }}</td>
+                        <td class="px-3 py-3.5 text-center text-slate-500 font-medium whitespace-nowrap">{{ item.unitName || 'وحدة' }}</td>
+                        <td class="px-3 py-3.5 text-center text-slate-800 font-bold whitespace-nowrap">{{ item.quantity }}</td>
+                        <td class="px-3 py-3.5 text-center whitespace-nowrap">
                           @if (item.returnedQuantity && item.returnedQuantity > 0) {
-                            <span class="text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded text-[11px] font-bold">
-                              {{ item.returnedQuantity }} مرتجع
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200 leading-none">
+                              <span>{{ item.returnedQuantity }}</span>
+                              <span class="text-[10px] text-purple-600 font-semibold">مرتجع</span>
                             </span>
                           } @else {
-                            <span class="text-slate-300">—</span>
+                            <span class="text-slate-300 font-mono">—</span>
                           }
                         </td>
-                        <td class="px-4 py-3 text-slate-600 font-mono">{{ item.unitPriceAtSale | number:'1.2-2' }}</td>
-                        <td class="px-4 py-3">
+                        <td class="px-3 py-3.5 text-center text-slate-600 font-mono whitespace-nowrap">{{ item.unitPriceAtSale | number:'1.2-2' }}</td>
+                        <td class="px-3 py-3.5 text-center whitespace-nowrap">
                           @if (item.discountAmount > 0) {
-                            <span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-200">
-                              -{{ item.discountAmount | number:'1.2-2' }} ({{ item.discountPercentage }}%)
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100/90 text-amber-900 border border-amber-300 leading-none" dir="ltr">
+                              <span>-{{ item.discountAmount | number:'1.2-2' }}</span>
+                              <span class="text-[10px] text-amber-700 font-semibold">({{ item.discountPercentage }}%)</span>
                             </span>
                           } @else {
-                            <span class="text-slate-400">—</span>
+                            <span class="text-slate-300 font-mono">—</span>
                           }
                         </td>
-                        <td class="px-4 py-3 font-black text-slate-900">{{ item.lineTotal | number:'1.2-2' }} ج.م</td>
+                        <td class="px-4 py-3.5 text-left font-black text-slate-900 whitespace-nowrap">
+                          {{ item.lineTotal | number:'1.2-2' }} <span class="text-[10px] font-normal text-slate-500">ج.م</span>
+                        </td>
                       </tr>
                     }
                   </tbody>

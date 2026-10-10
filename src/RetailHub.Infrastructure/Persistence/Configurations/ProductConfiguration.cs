@@ -10,12 +10,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
         builder.HasKey(p => p.Id);
 
-        builder.HasIndex(p => p.Barcode)
-            .IsUnique();
-
         builder.Property(p => p.Barcode)
-            .IsRequired()
             .HasMaxLength(50);
+
+        builder.HasIndex(p => p.Barcode)
+            .HasFilter("[Barcode] IS NOT NULL")
+            .IsUnique();
 
         builder.Property(p => p.NameAr)
             .IsRequired()

@@ -30,8 +30,25 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
         if (!await _unitOfWork.Brands.ExistsAsync(request.BrandId, ct))
             return Result.Failure(_localizer[MessageKeys.BrandNotFound]);
 
-        product.Update(request.NameAr, request.NameEn, request.CategoryId, request.BrandId);
+        var targetBarcode = string.IsNullOrWhiteSpace(request.Barcode)
+            ? null
+            : request.Barcode.Trim();
+
+        if (targetBarcode != null && targetBarcode != product.Barcode && await _unitOfWork.Products.ExistsAsync(targetBarcode, ct))
+            return Result.Failure(string.Format(_localizer[MessageKeys.ProductBarcodeExists], targetBarcode));
+
+        var oldBarcode = product.Barcode;
+        product.Update(targetBarcode, request.NameAr, request.NameEn, request.CategoryId, request.BrandId);
         _unitOfWork.Products.Update(product);
+
+        // Synchronize default unit barcode if it had the old barcode
+        var defaultUnit = await _unitOfWork.ProductUnits.GetDefaultUnitByProductIdAsync(product.Id, ct);
+        if (defaultUnit != null && (defaultUnit.Barcode == oldBarcode || string.IsNullOrEmpty(defaultUnit.Barcode)))
+        {
+            defaultUnit.Update(defaultUnit.Name, defaultUnit.ConversionFactor, defaultUnit.SalePrice, targetBarcode, defaultUnit.IsDefaultSale);
+            _unitOfWork.ProductUnits.Update(defaultUnit);
+        }
+
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success();

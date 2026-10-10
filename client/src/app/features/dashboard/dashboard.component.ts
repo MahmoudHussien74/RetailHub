@@ -183,7 +183,7 @@ import { DashboardStatsDto } from '../../core/models/dashboard.model';
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4">
           <div>
             <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">صحة المخزن والأصناف</h3>
-            <p class="text-xs text-slate-400 mt-0.5">نظرة عامة على مستودع الصيدلية</p>
+            <p class="text-xs text-slate-400 mt-0.5">نظرة عامة على المخزون والمستودع</p>
           </div>
 
           <div class="space-y-3">
