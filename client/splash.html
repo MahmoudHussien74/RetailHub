@@ -129,7 +129,12 @@
     .error-msg {
       font-size: 13px;
       color: #fca5a5;
-      line-height: 1.5;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      text-align: right;
+      word-break: break-word;
+      max-height: 180px;
+      overflow-y: auto;
     }
     .btn-group {
       display: flex;
@@ -151,6 +156,15 @@
     }
     .btn-retry:hover {
       background: #0369a1;
+    }
+    .btn-log {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      display: none;
+    }
+    .btn-log:hover {
+      background: rgba(245, 158, 11, 0.35);
     }
     .btn-close {
       background: rgba(255, 255, 255, 0.1);
@@ -198,10 +212,11 @@
 
     <div class="error-box" id="error-box">
       <div class="error-msg" id="error-msg">
-        تعذر الاتصال بخادم النظام أو قاعدة البيانات. يرجى التأكد من تشغيل خادم SQL Server ثم إعادة المحاولة.
+        تعذر الاتصال بخادم النظام المحلي. يرجى التحقق من تشغيل البرنامج أو إعادة المحاولة.
       </div>
       <div class="btn-group">
         <button class="btn btn-retry" onclick="retry()">إعادة المحاولة</button>
+        <button class="btn btn-log" id="btn-log" onclick="openLog()">عرض السجل</button>
         <button class="btn btn-close" onclick="closeApp()">إغلاق</button>
       </div>
     </div>
@@ -209,18 +224,27 @@
 
   <script>
     const { ipcRenderer } = require('electron');
+    let currentLogPath = null;
 
     ipcRenderer.on('status-update', (event, text) => {
       document.getElementById('status-text').innerText = text;
     });
 
-    ipcRenderer.on('backend-failed', (event, detail) => {
+    ipcRenderer.on('backend-failed', (event, data) => {
       document.getElementById('loader-box').style.display = 'none';
       document.getElementById('status-container').style.display = 'none';
       const errorBox = document.getElementById('error-box');
       errorBox.style.display = 'flex';
-      if (detail) {
-        document.getElementById('error-msg').innerText = detail;
+
+      // Support both old string format and new object format
+      if (typeof data === 'string') {
+        document.getElementById('error-msg').innerText = data;
+      } else if (data && data.message) {
+        document.getElementById('error-msg').innerText = data.message;
+        if (data.logPath) {
+          currentLogPath = data.logPath;
+          document.getElementById('btn-log').style.display = 'inline-block';
+        }
       }
     });
 
@@ -229,7 +253,15 @@
       document.getElementById('loader-box').style.display = 'block';
       document.getElementById('status-container').style.display = 'flex';
       document.getElementById('status-text').innerText = 'جاري إعادة محاولة الاتصال...';
+      document.getElementById('btn-log').style.display = 'none';
+      currentLogPath = null;
       ipcRenderer.send('retry-start');
+    }
+
+    function openLog() {
+      if (currentLogPath) {
+        ipcRenderer.send('open-log-file', currentLogPath);
+      }
     }
 
     function closeApp() {
@@ -238,3 +270,4 @@
   </script>
 </body>
 </html>
+

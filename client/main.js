@@ -1,11 +1,18 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
-const { spawn, exec } = require('child_process');
+const { spawn, exec, execSync } = require('child_process');
 const http = require('http');
+const net = require('net');
 const fs = require('fs');
 
 // Ignore self-signed certificates on localhost (ASP.NET dev certificate)
 app.commandLine.appendSwitch('ignore-certificate-errors');
+
+// Single instance lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
 
 let mainWindow = null;
 let splashWindow = null;
@@ -15,6 +22,15 @@ let isSpawningBackend = false;
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 const API_PORT = 5150;
 const HEALTH_URL = `http://127.0.0.1:${API_PORT}/api/health`;
+
+/**
+ * Returns the path to the backend crash log file.
+ */
+function getBackendLogPath() {
+  const logsDir = path.join(app.getPath('userData'), 'logs');
+  try { fs.mkdirSync(logsDir, { recursive: true }); } catch {}
+  return path.join(logsDir, 'backend-crash.log');
+}
 
 /**
  * Pings the API health endpoint to check readiness.
@@ -33,12 +49,48 @@ function pingHealth(timeoutMs = 1200) {
 }
 
 /**
+ * Checks if a specific port is already in use.
+ */
+function isPortInUse(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once('error', (err) => {
+      resolve(err.code === 'EADDRINUSE');
+    });
+    server.once('listening', () => {
+      server.close();
+      resolve(false);
+    });
+    server.listen(port, '127.0.0.1');
+  });
+}
+
+/**
+ * Tries to find what process is using a port (Windows only).
+ */
+function getProcessOnPort(port) {
+  try {
+    const result = execSync(`netstat -aon | findstr :${port} | findstr LISTENING`, { encoding: 'utf-8', timeout: 3000 });
+    const lines = result.trim().split('\n');
+    if (lines.length > 0) {
+      const parts = lines[0].trim().split(/\s+/);
+      const pid = parts[parts.length - 1];
+      try {
+        const taskInfo = execSync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, { encoding: 'utf-8', timeout: 3000 });
+        return { pid, info: taskInfo.trim() };
+      } catch { return { pid, info: '' }; }
+    }
+  } catch {}
+  return null;
+}
+
+/**
  * Creates the sleek loading / splash window.
  */
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
     width: 460,
-    height: 380,
+    height: 420,
     frame: false,
     resizable: false,
     center: true,
@@ -70,9 +122,9 @@ function updateSplashStatus(text) {
 /**
  * Displays an error on the splash screen with retry options.
  */
-function notifySplashError(errorMsg) {
+function notifySplashError(errorMsg, logPath) {
   if (splashWindow && !splashWindow.isDestroyed()) {
-    splashWindow.webContents.send('backend-failed', errorMsg);
+    splashWindow.webContents.send('backend-failed', { message: errorMsg, logPath: logPath || null });
   }
 }
 
@@ -98,13 +150,27 @@ function getBackendLaunchConfig() {
 
 /**
  * Spawns the backend process if not already running.
+ * Now captures stdout/stderr to a log file for crash diagnostics.
  */
 function spawnBackendProcess() {
   if (apiProcess || isSpawningBackend) return;
   isSpawningBackend = true;
 
   const config = getBackendLaunchConfig();
+  const logPath = getBackendLogPath();
   console.log('[Electron] Starting backend via:', config);
+  console.log('[Electron] Backend logs will be written to:', logPath);
+
+  // Write header to log file
+  const timestamp = new Date().toISOString();
+  fs.writeFileSync(logPath,
+    `=== RetailHub Backend Log ===\n` +
+    `Timestamp: ${timestamp}\n` +
+    `Launch Config: ${JSON.stringify(config, null, 2)}\n` +
+    `Working Dir: ${config.cwd}\n` +
+    `=============================\n\n`,
+    'utf-8'
+  );
 
   const env = {
     ...process.env,
@@ -113,35 +179,77 @@ function spawnBackendProcess() {
   };
 
   try {
-    if (config.type === 'exe') {
-      apiProcess = spawn(config.path, [], {
-        cwd: config.cwd,
-        env,
-        windowsHide: true,
-        stdio: 'ignore'
+    const spawnArgs = config.type === 'exe' ? [] : config.args;
+
+    apiProcess = spawn(config.path, spawnArgs, {
+      cwd: config.cwd,
+      env,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe']  // Capture stdout and stderr
+    });
+
+    // Pipe stdout to log file
+    if (apiProcess.stdout) {
+      apiProcess.stdout.on('data', (data) => {
+        const text = data.toString();
+        console.log('[Backend STDOUT]', text);
+        fs.appendFileSync(logPath, `[STDOUT] ${text}`, 'utf-8');
       });
-    } else {
-      apiProcess = spawn(config.path, config.args, {
-        cwd: config.cwd,
-        env,
-        windowsHide: true,
-        stdio: 'ignore'
+    }
+
+    // Pipe stderr to log file
+    if (apiProcess.stderr) {
+      apiProcess.stderr.on('data', (data) => {
+        const text = data.toString();
+        console.error('[Backend STDERR]', text);
+        fs.appendFileSync(logPath, `[STDERR] ${text}`, 'utf-8');
       });
     }
 
     apiProcess.on('error', (err) => {
       console.error('[Electron] Failed to spawn backend process:', err);
-      notifySplashError('فشل تشغيل خادم النظام: ' + err.message);
+      fs.appendFileSync(logPath, `\n[SPAWN ERROR] ${err.stack || err.message}\n`, 'utf-8');
+      notifySplashError(
+        'فشل تشغيل خادم النظام: ' + err.message +
+        '\n\nتأكد من وجود ملف RetailHub.API.exe في مجلد التطبيق.',
+        logPath
+      );
     });
 
     apiProcess.on('exit', (code, signal) => {
       console.log(`[Electron] Backend process exited with code ${code}, signal ${signal}`);
+      fs.appendFileSync(logPath, `\n[EXIT] Code: ${code}, Signal: ${signal}\n`, 'utf-8');
+
+      if (code !== 0 && code !== null) {
+        // Translate common exit codes to helpful messages
+        let errorDetail = '';
+        const hexCode = code > 0 ? '0x' + code.toString(16).toUpperCase() : code;
+
+        if (code === 3762504530 || code === -532462766) {
+          // 0xE0434352 = .NET CLR unhandled exception
+          errorDetail = `خطأ في تشغيل خادم النظام (.NET Exception)\nرمز الخطأ: ${hexCode}\n\nالأسباب المحتملة:\n• البورت ${API_PORT} مستخدم من برنامج آخر\n• ملف قاعدة البيانات تالف أو مقفول\n• نقص في ملفات النظام المطلوبة`;
+        } else if (code === 3221225794 || code === -1073741502) {
+          // 0xC0000142 = DLL Initialization Failed
+          errorDetail = `فشل تهيئة مكتبات النظام (DLL Init Failed)\nرمز: ${hexCode}\n\nالحل: أعد تثبيت .NET Runtime أو أعد تشغيل الجهاز`;
+        } else if (code === 3221225781 || code === -1073741515) {
+          // 0xC0000135 = Missing DLL
+          errorDetail = `ملفات نظام مفقودة\nرمز: ${hexCode}\n\nالحل: تأكد من تثبيت .NET 10 Runtime أو Visual C++ Redistributable`;
+        } else {
+          errorDetail = `توقف خادم النظام عن العمل\nرمز الخطأ: ${hexCode} (${code})`;
+        }
+
+        errorDetail += '\n\nاضغط "عرض السجل" لمعرفة تفاصيل الخطأ.';
+
+        notifySplashError(errorDetail, logPath);
+      }
       apiProcess = null;
       isSpawningBackend = false;
     });
   } catch (e) {
     console.error('[Electron] Exception launching backend:', e);
-    notifySplashError('خطأ أثناء تشغيل النظام: ' + e.message);
+    fs.appendFileSync(logPath, `\n[EXCEPTION] ${e.stack || e.message}\n`, 'utf-8');
+    notifySplashError('خطأ أثناء تشغيل النظام: ' + e.message, logPath);
+    isSpawningBackend = false;
   }
 }
 
@@ -159,25 +267,66 @@ async function waitForBackendAndLaunch() {
     return;
   }
 
-  // 2. Start the backend process
+  // 2. Check if port is already in use by another process
+  const portBusy = await isPortInUse(API_PORT);
+  if (portBusy) {
+    console.warn(`[Electron] Port ${API_PORT} is already in use!`);
+    const procInfo = getProcessOnPort(API_PORT);
+    let portMsg = `البورت ${API_PORT} مستخدم من برنامج آخر على الجهاز.`;
+    if (procInfo) {
+      portMsg += `\n(PID: ${procInfo.pid})`;
+      if (procInfo.info) portMsg += `\n${procInfo.info}`;
+    }
+    portMsg += '\n\nالحل: أغلق البرنامج الآخر أو أعد تشغيل الجهاز ثم حاول مرة أخرى.';
+    notifySplashError(portMsg);
+    return;
+  }
+
+  // 3. Start the backend process
   updateSplashStatus('جاري تشغيل خادم النظام وقاعدة البيانات...');
   spawnBackendProcess();
 
-  // 3. Wait with polling
-  const maxAttempts = 60; // 60 * 500ms = 30 seconds
+  // 4. Wait with polling — generous timeout for slow machines & first-run DB setup
+  const maxAttempts = 240; // 240 * 500ms = 120 seconds (2 minutes)
   let attempt = 0;
+  let backendRetries = 0;
+  const maxBackendRetries = 2;
+  const startTime = Date.now();
+
+  // Rotating status messages so the user knows it's still working
+  const statusMessages = [
+    'جاري تشغيل خادم النظام...',
+    'جاري تحميل مكونات النظام...',
+    'جاري تهيئة قاعدة البيانات...',
+    'جاري إعداد الخدمات والإعدادات...',
+    'جاري التحقق من جاهزية النظام...',
+    'التشغيل الأول قد يستغرق وقتاً أطول، يرجى الانتظار...',
+    'لا يزال النظام يعمل على التهيئة...',
+    'جاري تجهيز قاعدة البيانات للمرة الأولى...'
+  ];
 
   const interval = setInterval(async () => {
     attempt++;
+    const elapsedSec = Math.round((Date.now() - startTime) / 1000);
 
+    // Update status message every 3 seconds with a rotating message
     if (attempt % 6 === 0) {
-      updateSplashStatus('جاري تهيئة قاعدة البيانات والخدمات...');
+      const msgIndex = Math.min(Math.floor(elapsedSec / 8), statusMessages.length - 1);
+      updateSplashStatus(statusMessages[msgIndex]);
     }
 
-    const ready = await pingHealth(500);
+    // If backend process died, try restarting it (up to maxBackendRetries times)
+    if (!apiProcess && !isSpawningBackend && backendRetries < maxBackendRetries) {
+      backendRetries++;
+      console.log(`[Electron] Backend not running, retry #${backendRetries}...`);
+      updateSplashStatus(`إعادة تشغيل خادم النظام... (محاولة ${backendRetries + 1})`);
+      spawnBackendProcess();
+    }
+
+    const ready = await pingHealth(800);
     if (ready) {
       clearInterval(interval);
-      console.log('[Electron] Backend is ready!');
+      console.log(`[Electron] Backend is ready after ${elapsedSec}s!`);
       updateSplashStatus('تم الاتصال بنجاح! جاري فتح البرنامج...');
       setTimeout(() => {
         createMainWindow();
@@ -187,8 +336,20 @@ async function waitForBackendAndLaunch() {
 
     if (attempt >= maxAttempts) {
       clearInterval(interval);
-      console.error('[Electron] Timeout waiting for backend to respond.');
-      notifySplashError('استغرق تشغيل النظام وقتاً أطول من المتوقع. تأكد من عمل خدمة SQL Server ثم أعد المحاولة.');
+      console.error(`[Electron] Timeout (${elapsedSec}s) waiting for backend.`);
+      const logPath = getBackendLogPath();
+      notifySplashError(
+        'استغرق تشغيل خادم النظام وقتاً أطول من المتوقع.\n\n' +
+        'الأسباب المحتملة:\n' +
+        '• مكافح الفيروسات (مثل Windows Defender) يمنع تشغيل البرنامج\n' +
+        '• جدار الحماية (Firewall) يحجب البورت ' + API_PORT + '\n' +
+        '• البرنامج يحتاج صلاحيات مدير (Run as Administrator)\n\n' +
+        'الحل:\n' +
+        '1. أغلق البرنامج وافتحه كمدير (Right click → Run as administrator)\n' +
+        '2. أضف مجلد البرنامج لاستثناءات مكافح الفيروسات\n' +
+        '3. اضغط "إعادة المحاولة" للمحاولة مرة أخرى',
+        logPath
+      );
     }
   }, 500);
 }
@@ -291,6 +452,13 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 app.on('before-quit', cleanupBackend);
 
 app.on('window-all-closed', () => {
@@ -308,6 +476,13 @@ ipcMain.on('retry-start', () => {
 ipcMain.on('close-splash', () => {
   cleanupBackend();
   app.quit();
+});
+
+// Open log file in system's default text editor
+ipcMain.on('open-log-file', (event, logPath) => {
+  if (logPath && fs.existsSync(logPath)) {
+    shell.openPath(logPath);
+  }
 });
 
 // IPC Handler for silent printing (Thermal Printers)

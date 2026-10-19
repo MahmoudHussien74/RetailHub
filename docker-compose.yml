@@ -1,0 +1,53 @@
+services:
+  # ── SQL Server Database ──
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: retailhub-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "RetailHub@2026!"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "RetailHub@2026!" -C -Q "SELECT 1" -b
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── .NET API Backend ──
+  api:
+    build:
+      context: .
+      dockerfile: src/RetailHub.API/Dockerfile
+    container_name: retailhub-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - DatabaseProvider=SqlServer
+      - ConnectionStrings__DefaultConnection=Server=db;Database=RetailHubDb;User Id=sa;Password=RetailHub@2026!;TrustServerCertificate=True;
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Angular Frontend (Nginx) ──
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: retailhub-client
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  sqlserver-data:

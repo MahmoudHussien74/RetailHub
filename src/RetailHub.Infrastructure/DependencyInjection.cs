@@ -21,13 +21,22 @@ public static class DependencyInjection
         {
             if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
             {
-                // Desktop mode: use a local SQLite file in AppData
-                var appDataDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "RetailHub");
-                Directory.CreateDirectory(appDataDir);
+                // Determine a safe, universal path that works on any machine
+                string dataDir;
+                try
+                {
+                    dataDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "RetailHub");
+                    Directory.CreateDirectory(dataDir);
+                }
+                catch
+                {
+                    dataDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
+                    Directory.CreateDirectory(dataDir);
+                }
 
-                var dbPath = Path.Combine(appDataDir, "RetailHub.db");
+                var dbPath = Path.Combine(dataDir, "RetailHub.db");
                 options.UseSqlite($"Data Source={dbPath}");
             }
             else

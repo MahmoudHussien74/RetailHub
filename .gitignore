@@ -41,3 +41,6 @@ client/release/
 *.db-wal
 *.sqlite
 
+## Docker
+docker-compose.override.yml
+
