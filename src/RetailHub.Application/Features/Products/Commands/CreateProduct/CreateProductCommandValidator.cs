@@ -42,15 +42,15 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
             {
                 unit.RuleFor(u => u.Name)
                     .NotEmpty()
-                    .WithMessage("اسم وحدة البيع مطلوب");
+                    .WithMessage(_ => localizer[MessageKeys.UnitNameRequired].Value);
 
                 unit.RuleFor(u => u.ConversionFactor)
                     .GreaterThan(0)
-                    .WithMessage("معامل التحويل يجب أن يكون أكبر من صفر");
+                    .WithMessage(_ => localizer[MessageKeys.ConversionFactorMustBePositive].Value);
 
                 unit.RuleFor(u => u.SalePrice)
                     .GreaterThanOrEqualTo(0)
-                    .WithMessage("سعر بيع الوحدة لا يمكن أن يكون سالباً");
+                    .WithMessage(_ => localizer[MessageKeys.UnitSellingPriceNotNegative].Value);
             });
         });
     }

@@ -18,6 +18,9 @@ public class Result : IResult<Result>
     public static Result Failure(string error) =>
         new() { IsSuccess = false, Error = error };
 
+    public static Result Failure(Errors.Error error) =>
+        new() { IsSuccess = false, Error = error.Description };
+
     public static Result CreateValidationFailure(IReadOnlyList<string> errors) =>
         new()
         {
@@ -45,6 +48,9 @@ public class Result<T> : IResult<Result<T>>
 
     public static Result<T> Failure(string error) =>
         new() { IsSuccess = false, Error = error };
+
+    public static Result<T> Failure(Errors.Error error) =>
+        new() { IsSuccess = false, Error = error.Description };
 
     public static Result<T> CreateValidationFailure(IReadOnlyList<string> errors) =>
         new()

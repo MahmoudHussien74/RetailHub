@@ -80,7 +80,9 @@ public class VoidInvoiceCommandHandler : IRequestHandler<VoidInvoiceCommand, Res
                 CashDrawerTransactionType.Return,
                 -invoice.AmountPaid,
                 referenceId: invoice.Id,
-                notes: $"إلغاء فاتورة بيع رقم {invoice.InvoiceNumber}");
+                notes: string.Format(
+                    _localizer[MessageKeys.VoidSaleInvoiceNotes],
+                    invoice.InvoiceNumber));
 
             await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }

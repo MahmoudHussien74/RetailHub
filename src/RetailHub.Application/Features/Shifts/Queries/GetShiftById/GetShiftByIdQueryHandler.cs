@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using RetailHub.Application.Common;
+using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Features.Shifts.DTOs;
 using RetailHub.Application.Interfaces;
 using RetailHub.Domain.Enums;
@@ -11,11 +13,13 @@ public class GetShiftByIdQueryHandler : IRequestHandler<GetShiftByIdQuery, Resul
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAppDbContext _context;
+    private readonly IStringLocalizer<Messages> _localizer;
 
-    public GetShiftByIdQueryHandler(IUnitOfWork unitOfWork, IAppDbContext context)
+    public GetShiftByIdQueryHandler(IUnitOfWork unitOfWork, IAppDbContext context, IStringLocalizer<Messages> localizer)
     {
         _unitOfWork = unitOfWork;
         _context = context;
+        _localizer = localizer;
     }
 
     public async Task<Result<ShiftDto>> Handle(GetShiftByIdQuery request, CancellationToken ct)
@@ -23,7 +27,7 @@ public class GetShiftByIdQueryHandler : IRequestHandler<GetShiftByIdQuery, Resul
         var shift = await _unitOfWork.Shifts.GetByIdAsync(request.Id, ct);
         if (shift is null)
         {
-            return Result<ShiftDto>.Failure("الوردية غير موجودة.");
+            return Result<ShiftDto>.Failure(_localizer[MessageKeys.ShiftNotFound]);
         }
 
         var diff = shift.Difference ?? 0m;

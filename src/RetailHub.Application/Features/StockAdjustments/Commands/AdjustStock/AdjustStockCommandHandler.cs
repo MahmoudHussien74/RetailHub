@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.Extensions.Localization;
 using RetailHub.Application.Common;
+using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Interfaces;
 using RetailHub.Domain.Entities;
 using RetailHub.Domain.Enums;
@@ -15,20 +17,25 @@ namespace RetailHub.Application.Features.StockAdjustments.Commands.AdjustStock;
 public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Result<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IStringLocalizer<Messages> _localizer;
 
-    public AdjustStockCommandHandler(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+    public AdjustStockCommandHandler(IUnitOfWork unitOfWork, IStringLocalizer<Messages> localizer)
+    {
+        _unitOfWork = unitOfWork;
+        _localizer = localizer;
+    }
 
     public async Task<Result<Guid>> Handle(AdjustStockCommand request, CancellationToken ct)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId, ct);
         if (product is null)
-            return Result<Guid>.Failure("المنتج غير موجود");
+            return Result<Guid>.Failure(_localizer[MessageKeys.ProductNotFound]);
 
         // Tracked entities — including zero-quantity ones, so counts can bring a batch back to life.
         var batches = await _unitOfWork.Batches.GetByProductIdOrderedByExpiryAsync(request.ProductId, ct);
         var batch = batches.FirstOrDefault(b => b.Id == request.BatchId);
         if (batch is null)
-            return Result<Guid>.Failure("التشغيلة غير موجودة لهذا المنتج");
+            return Result<Guid>.Failure(_localizer[MessageKeys.BatchNotFoundForProduct]);
 
         var reason = request.Reason.Trim();
         StockMovement movement;
@@ -36,11 +43,15 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Res
         if (request.Kind == StockAdjustmentKind.WriteOff)
         {
             if (request.Quantity <= 0)
-                return Result<Guid>.Failure("الكمية يجب أن تكون أكبر من صفر");
+                return Result<Guid>.Failure(string.Format(
+                    _localizer[MessageKeys.MustBePositive],
+                    _localizer[MessageKeys.BatchQuantity]));
 
             if (request.Quantity > batch.Quantity)
-                return Result<Guid>.Failure(
-                    $"الكمية المطلوب إعدامها ({request.Quantity}) أكبر من رصيد التشغيلة ({batch.Quantity})");
+                return Result<Guid>.Failure(string.Format(
+                    _localizer[MessageKeys.DamageQuantityExceedsBatch],
+                    request.Quantity,
+                    batch.Quantity));
 
             batch.DeductQuantity(request.Quantity);
             movement = StockMovement.Create(
@@ -49,11 +60,13 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Res
         else
         {
             if (request.Quantity < 0)
-                return Result<Guid>.Failure("الكمية الفعلية لا يمكن أن تكون سالبة");
+                return Result<Guid>.Failure(string.Format(
+                    _localizer[MessageKeys.MustNotBeNegative],
+                    _localizer[MessageKeys.BatchQuantity]));
 
             var difference = request.Quantity - batch.Quantity;
             if (difference == 0)
-                return Result<Guid>.Failure("الكمية الفعلية مطابقة للرصيد المسجل، لا توجد تسوية");
+                return Result<Guid>.Failure(_localizer[MessageKeys.StockAdjustmentNoDifference]);
 
             if (difference > 0)
                 batch.AddQuantity(difference);

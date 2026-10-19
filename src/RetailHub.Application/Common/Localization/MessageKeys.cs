@@ -13,6 +13,7 @@ public static class MessageKeys
     public const string MaxLengthExceeded = nameof(MaxLengthExceeded);
     public const string MustBePositive = nameof(MustBePositive);
     public const string MustNotBeNegative = nameof(MustNotBeNegative);
+    public const string FieldMinLength = nameof(FieldMinLength);
 
     // ── Category ──
     public const string CategoryNameAr = nameof(CategoryNameAr);
@@ -85,6 +86,8 @@ public static class MessageKeys
     public const string ReturnInvoiceItemId = nameof(ReturnInvoiceItemId);
     public const string ReturnQuantity = nameof(ReturnQuantity);
     public const string ReturnQuantityExceeded = nameof(ReturnQuantityExceeded);
+    public const string SaleInvoiceReturnNotes = nameof(SaleInvoiceReturnNotes);
+    public const string SaleInvoiceReturnCashNotes = nameof(SaleInvoiceReturnCashNotes);
 
     // ── Employee ──
     public const string EmployeeName = nameof(EmployeeName);
@@ -99,4 +102,50 @@ public static class MessageKeys
     // ── Cash Drawer ──
     public const string CashDrawerTransactionType = nameof(CashDrawerTransactionType);
     public const string CashDrawerAmountNonZero = nameof(CashDrawerAmountNonZero);
+    public const string SaleInvoiceNotes = nameof(SaleInvoiceNotes);
+    public const string VoidSaleInvoiceNotes = nameof(VoidSaleInvoiceNotes);
+    public const string PurchaseInvoiceNotes = nameof(PurchaseInvoiceNotes);
+    public const string CustomerPaymentNotes = nameof(CustomerPaymentNotes);
+
+    // ── Product Units ──
+    public const string ProductUnitNotFound = nameof(ProductUnitNotFound);
+    public const string ProductUnitMismatch = nameof(ProductUnitMismatch);
+    public const string DefaultProductUnitNotFound = nameof(DefaultProductUnitNotFound);
+    public const string CannotDeleteLastProductUnit = nameof(CannotDeleteLastProductUnit);
+    public const string UnitNameRequired = nameof(UnitNameRequired);
+    public const string ConversionFactorMustBePositive = nameof(ConversionFactorMustBePositive);
+    public const string UnitSellingPriceNotNegative = nameof(UnitSellingPriceNotNegative);
+
+    // ── Stock Adjustments ──
+    public const string BatchNotFoundForProduct = nameof(BatchNotFoundForProduct);
+    public const string AdjustmentReasonRequired = nameof(AdjustmentReasonRequired);
+    public const string AdjustmentReasonMaxLength = nameof(AdjustmentReasonMaxLength);
+    public const string DamageQuantityExceedsBatch = nameof(DamageQuantityExceedsBatch);
+    public const string StockAdjustmentNoDifference = nameof(StockAdjustmentNoDifference);
+
+    // ── Discounts ──
+    public const string DiscountRangeInvalid = nameof(DiscountRangeInvalid);
+    public const string DiscountExceedsCashierLimit = nameof(DiscountExceedsCashierLimit);
+
+    // ── Shifts ──
+    public const string ShiftNotFound = nameof(ShiftNotFound);
+    public const string ActiveShiftAlreadyExists = nameof(ActiveShiftAlreadyExists);
+
+    // ── Auth & Identity ──
+    public const string UserNotFound = nameof(UserNotFound);
+    public const string InvalidCredentials = nameof(InvalidCredentials);
+    public const string InvalidAccessToken = nameof(InvalidAccessToken);
+    public const string UserNotFoundOrInactive = nameof(UserNotFoundOrInactive);
+    public const string InvalidRefreshToken = nameof(InvalidRefreshToken);
+    public const string UsernameAlreadyExists = nameof(UsernameAlreadyExists);
+    public const string Username = nameof(Username);
+    public const string Password = nameof(Password);
+    public const string FullName = nameof(FullName);
+    public const string Role = nameof(Role);
+    public const string CurrentPassword = nameof(CurrentPassword);
+    public const string NewPassword = nameof(NewPassword);
+    public const string AccessToken = nameof(AccessToken);
+    public const string RefreshToken = nameof(RefreshToken);
+    public const string UsernameFormatInvalid = nameof(UsernameFormatInvalid);
+    public const string RoleInvalid = nameof(RoleInvalid);
 }

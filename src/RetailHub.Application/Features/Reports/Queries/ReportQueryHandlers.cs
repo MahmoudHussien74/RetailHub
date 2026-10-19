@@ -80,7 +80,7 @@ public class GetProfitLossReportQueryHandler
 
         var expenses = rawExpenses
             .Where(c => (!c.ReferenceId.HasValue || !purchaseInvoiceIds.Contains(c.ReferenceId.Value))
-                        && (c.Notes == null || (!c.Notes.Contains("شراء") && !c.Notes.Contains("مشتريات"))))
+                        && (c.Notes == null || (!c.Notes.Contains("شراء") && !c.Notes.Contains("مشتريات") && !c.Notes.Contains("purchase", StringComparison.OrdinalIgnoreCase))))
             .Sum(c => Math.Abs(c.Amount));
 
         // Salary advances

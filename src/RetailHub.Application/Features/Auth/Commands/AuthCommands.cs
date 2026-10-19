@@ -1,6 +1,8 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Localization;
 using RetailHub.Application.Common;
+using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Interfaces;
 
 namespace RetailHub.Application.Features.Auth.Commands;
@@ -13,15 +15,19 @@ public record LoginCommand(string Username, string Password)
 
 public class LoginCommandValidator : AbstractValidator<LoginCommand>
 {
-    public LoginCommandValidator()
+    public LoginCommandValidator(IStringLocalizer<Messages> localizer)
     {
         RuleFor(x => x.Username)
             .NotEmpty()
-            .WithMessage("اسم المستخدم مطلوب");
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.Username]));
             
         RuleFor(x => x.Password)
-            .NotEmpty().
-            WithMessage("كلمة المرور مطلوبة");
+            .NotEmpty()
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.Password]));
     }
 }
 
@@ -42,14 +48,19 @@ public record RefreshTokenCommand(string AccessToken, string RefreshToken)
 
 public class RefreshTokenCommandValidator : AbstractValidator<RefreshTokenCommand>
 {
-    public RefreshTokenCommandValidator()
+    public RefreshTokenCommandValidator(IStringLocalizer<Messages> localizer)
     {
         RuleFor(x => x.AccessToken)
             .NotEmpty()
-            .WithMessage("Access token مطلوب");
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.AccessToken]));
+
         RuleFor(x => x.RefreshToken)
             .NotEmpty()
-            .WithMessage("Refresh token مطلوب");
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.RefreshToken]));
     }
 }
 
@@ -72,22 +83,51 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
     private static readonly string[] AllowedRoles = ["Admin", "Cashier", "InventoryManager"];
 
-    public RegisterCommandValidator()
+    public RegisterCommandValidator(IStringLocalizer<Messages> localizer)
     {
         RuleFor(x => x.FullName)
             .NotEmpty()
-            .WithMessage("الاسم الكامل مطلوب")
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.FullName]))
             .MaximumLength(100)
-            .WithMessage("الاسم لا يتجاوز 100 حرف");
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.MaxLengthExceeded],
+                localizer[MessageKeys.FullName], 100));
 
-        RuleFor(x => x.Username).NotEmpty().WithMessage("اسم المستخدم مطلوب")
-            .MinimumLength(3).WithMessage("اسم المستخدم 3 أحرف على الأقل")
-            .MaximumLength(50).WithMessage("اسم المستخدم لا يتجاوز 50 حرف")
-            .Matches("^[a-zA-Z0-9._]+$").WithMessage("اسم المستخدم يحتوي أحرف إنجليزية وأرقام ونقاط فقط");
-        RuleFor(x => x.Password).NotEmpty().WithMessage("كلمة المرور مطلوبة")
-            .MinimumLength(6).WithMessage("كلمة المرور 6 أحرف على الأقل");
-        RuleFor(x => x.Role).NotEmpty().WithMessage("الدور مطلوب")
-            .Must(r => AllowedRoles.Contains(r)).WithMessage("الدور يجب أن يكون Admin أو Cashier أو InventoryManager");
+        RuleFor(x => x.Username)
+            .NotEmpty()
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.Username]))
+            .MinimumLength(3)
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.FieldMinLength],
+                localizer[MessageKeys.Username], 3))
+            .MaximumLength(50)
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.MaxLengthExceeded],
+                localizer[MessageKeys.Username], 50))
+            .Matches("^[a-zA-Z0-9._]+$")
+            .WithMessage(_ => localizer[MessageKeys.UsernameFormatInvalid].Value);
+
+        RuleFor(x => x.Password)
+            .NotEmpty()
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.Password]))
+            .MinimumLength(6)
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.FieldMinLength],
+                localizer[MessageKeys.Password], 6));
+
+        RuleFor(x => x.Role)
+            .NotEmpty()
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.Role]))
+            .Must(r => AllowedRoles.Contains(r))
+            .WithMessage(_ => localizer[MessageKeys.RoleInvalid].Value);
     }
 }
 
@@ -112,17 +152,23 @@ public record ChangePasswordCommand(string CurrentPassword, string NewPassword)
 
 public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommand>
 {
-    public ChangePasswordCommandValidator()
+    public ChangePasswordCommandValidator(IStringLocalizer<Messages> localizer)
     {
         RuleFor(x => x.CurrentPassword)
-            .NotEmpty().
-            WithMessage("كلمة المرور الحالية مطلوبة");
+            .NotEmpty()
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.CurrentPassword]));
 
         RuleFor(x => x.NewPassword)
             .NotEmpty()
-            .WithMessage("كلمة المرور الجديدة مطلوبة")
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.RequiredField],
+                localizer[MessageKeys.NewPassword]))
             .MinimumLength(6)
-            .WithMessage("كلمة المرور الجديدة 6 أحرف على الأقل");
+            .WithMessage(_ => string.Format(
+                localizer[MessageKeys.FieldMinLength],
+                localizer[MessageKeys.NewPassword], 6));
     }
 }
 

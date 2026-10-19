@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.Extensions.Localization;
 using RetailHub.Application.Common;
+using RetailHub.Application.Common.Localization;
 using RetailHub.Application.Interfaces;
 
 namespace RetailHub.Application.Features.ProductUnits.Commands.DeleteProductUnit;
@@ -8,20 +10,24 @@ public class DeleteProductUnitCommandHandler
     : IRequestHandler<DeleteProductUnitCommand, Result<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IStringLocalizer<Messages> _localizer;
 
-    public DeleteProductUnitCommandHandler(IUnitOfWork unitOfWork) =>
+    public DeleteProductUnitCommandHandler(IUnitOfWork unitOfWork, IStringLocalizer<Messages> localizer)
+    {
         _unitOfWork = unitOfWork;
+        _localizer = localizer;
+    }
 
     public async Task<Result<bool>> Handle(DeleteProductUnitCommand request, CancellationToken ct)
     {
         var unit = await _unitOfWork.ProductUnits.GetByIdAsync(request.UnitId, ct);
         if (unit is null)
-            return Result<bool>.Failure("وحدة المنتج غير موجودة.");
+            return Result<bool>.Failure(_localizer[MessageKeys.ProductUnitNotFound]);
 
         // Ensure at least one unit remains for the product
         var siblings = await _unitOfWork.ProductUnits.GetByProductIdAsync(unit.ProductId, ct);
         if (siblings.Count <= 1)
-            return Result<bool>.Failure("لا يمكن حذف آخر وحدة للمنتج. يجب أن يحتوي المنتج على وحدة واحدة على الأقل.");
+            return Result<bool>.Failure(_localizer[MessageKeys.CannotDeleteLastProductUnit]);
 
         _unitOfWork.ProductUnits.Remove(unit);
 

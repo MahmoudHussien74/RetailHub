@@ -23,7 +23,7 @@ public class UpdateProductUnitCommandHandler
     {
         var unit = await _unitOfWork.ProductUnits.GetByIdAsync(request.UnitId, ct);
         if (unit is null)
-            return Result<ProductUnitDto>.Failure("وحدة المنتج غير موجودة.");
+            return Result<ProductUnitDto>.Failure(_localizer[MessageKeys.ProductUnitNotFound]);
 
         // If setting as default, clear other defaults for this product
         if (request.IsDefaultSale)

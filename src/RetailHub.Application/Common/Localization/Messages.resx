@@ -38,6 +38,7 @@
   <data name="MaxLengthExceeded" xml:space="preserve"><value>{0} must not exceed {1} characters.</value></data>
   <data name="MustBePositive" xml:space="preserve"><value>{0} must be greater than zero.</value></data>
   <data name="MustNotBeNegative" xml:space="preserve"><value>{0} cannot be negative.</value></data>
+  <data name="FieldMinLength" xml:space="preserve"><value>{0} must be at least {1} characters.</value></data>
 
   <!-- ── Category ── -->
   <data name="CategoryNameAr" xml:space="preserve"><value>Arabic Category Name</value></data>
@@ -111,6 +112,8 @@
   <data name="ReturnInvoiceItemId" xml:space="preserve"><value>Invoice Item ID</value></data>
   <data name="ReturnQuantity" xml:space="preserve"><value>Return Quantity</value></data>
   <data name="ReturnQuantityExceeded" xml:space="preserve"><value>Return quantity ({0}) exceeds remaining returnable quantity ({1}) for item '{2}'.</value></data>
+  <data name="SaleInvoiceReturnNotes" xml:space="preserve"><value>Return of sale invoice #{0}</value></data>
+  <data name="SaleInvoiceReturnCashNotes" xml:space="preserve"><value>Return of sale invoice #{0} (Cash)</value></data>
 
   <!-- ── Employee ── -->
   <data name="EmployeeName" xml:space="preserve"><value>Employee Name</value></data>
@@ -125,4 +128,50 @@
   <!-- ── Cash Drawer ── -->
   <data name="CashDrawerTransactionType" xml:space="preserve"><value>Transaction Type</value></data>
   <data name="CashDrawerAmountNonZero" xml:space="preserve"><value>Transaction amount cannot be zero.</value></data>
+  <data name="SaleInvoiceNotes" xml:space="preserve"><value>Sale invoice #{0}</value></data>
+  <data name="VoidSaleInvoiceNotes" xml:space="preserve"><value>Void sale invoice #{0}</value></data>
+  <data name="PurchaseInvoiceNotes" xml:space="preserve"><value>Purchase invoice #{0}</value></data>
+  <data name="CustomerPaymentNotes" xml:space="preserve"><value>Payment collection from customer: {0}</value></data>
+
+  <!-- ── Product Units ── -->
+  <data name="ProductUnitNotFound" xml:space="preserve"><value>Product unit not found.</value></data>
+  <data name="ProductUnitMismatch" xml:space="preserve"><value>Product unit does not belong to the specified product.</value></data>
+  <data name="DefaultProductUnitNotFound" xml:space="preserve"><value>No default unit found for this product.</value></data>
+  <data name="CannotDeleteLastProductUnit" xml:space="preserve"><value>Cannot delete the product's last unit. A product must have at least one unit.</value></data>
+  <data name="UnitNameRequired" xml:space="preserve"><value>Unit name is required.</value></data>
+  <data name="ConversionFactorMustBePositive" xml:space="preserve"><value>Conversion factor must be greater than zero.</value></data>
+  <data name="UnitSellingPriceNotNegative" xml:space="preserve"><value>Unit selling price cannot be negative.</value></data>
+
+  <!-- ── Stock Adjustments ── -->
+  <data name="BatchNotFoundForProduct" xml:space="preserve"><value>Batch not found for this product.</value></data>
+  <data name="AdjustmentReasonRequired" xml:space="preserve"><value>Adjustment reason is required.</value></data>
+  <data name="AdjustmentReasonMaxLength" xml:space="preserve"><value>Adjustment reason must not exceed 500 characters.</value></data>
+  <data name="DamageQuantityExceedsBatch" xml:space="preserve"><value>Quantity to write off ({0}) exceeds batch balance ({1}).</value></data>
+  <data name="StockAdjustmentNoDifference" xml:space="preserve"><value>Actual quantity matches recorded balance. No adjustment needed.</value></data>
+
+  <!-- ── Discounts ── -->
+  <data name="DiscountRangeInvalid" xml:space="preserve"><value>Discount percentage must be between 0% and 100%.</value></data>
+  <data name="DiscountExceedsCashierLimit" xml:space="preserve"><value>Discount percentage exceeds allowed cashier limit ({0}%). Manager approval is required.</value></data>
+
+  <!-- ── Shifts ── -->
+  <data name="ShiftNotFound" xml:space="preserve"><value>Shift not found.</value></data>
+  <data name="ActiveShiftAlreadyExists" xml:space="preserve"><value>An active shift already exists for this cashier.</value></data>
+
+  <!-- ── Auth & Identity ── -->
+  <data name="UserNotFound" xml:space="preserve"><value>User not found.</value></data>
+  <data name="InvalidCredentials" xml:space="preserve"><value>Invalid username or password.</value></data>
+  <data name="InvalidAccessToken" xml:space="preserve"><value>Invalid access token.</value></data>
+  <data name="UserNotFoundOrInactive" xml:space="preserve"><value>User not found or inactive.</value></data>
+  <data name="InvalidRefreshToken" xml:space="preserve"><value>Invalid or expired refresh token.</value></data>
+  <data name="UsernameAlreadyExists" xml:space="preserve"><value>Username is already taken.</value></data>
+  <data name="Username" xml:space="preserve"><value>Username</value></data>
+  <data name="Password" xml:space="preserve"><value>Password</value></data>
+  <data name="FullName" xml:space="preserve"><value>Full Name</value></data>
+  <data name="Role" xml:space="preserve"><value>Role</value></data>
+  <data name="CurrentPassword" xml:space="preserve"><value>Current Password</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>New Password</value></data>
+  <data name="AccessToken" xml:space="preserve"><value>Access Token</value></data>
+  <data name="RefreshToken" xml:space="preserve"><value>Refresh Token</value></data>
+  <data name="UsernameFormatInvalid" xml:space="preserve"><value>Username can only contain English letters, numbers, dots, and underscores.</value></data>
+  <data name="RoleInvalid" xml:space="preserve"><value>Role must be Admin, Cashier, or InventoryManager.</value></data>
 </root>

@@ -129,7 +129,9 @@ public class CreatePurchaseInvoiceCommandHandler
                 CashDrawerTransactionType.Expense,
                 -totalAmount,
                 referenceId: purchaseInvoice.Id,
-                notes: $"فاتورة شراء رقم {invoiceNumber}");
+                notes: string.Format(
+                    _localizer[MessageKeys.PurchaseInvoiceNotes],
+                    invoiceNumber));
 
             await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }

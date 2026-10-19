@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using RetailHub.Application.Common;
+using RetailHub.Application.Common.Errors;
 using RetailHub.Application.Interfaces;
 
 namespace RetailHub.Infrastructure.Identity;
@@ -30,11 +31,11 @@ public class AuthService : IAuthService
     {
         var user = await _userManager.FindByNameAsync(username);
         if (user is null || !user.IsActive)
-            return Result<AuthResult>.Failure("اسم المستخدم أو كلمة المرور غير صحيحة");
+            return Result<AuthResult>.Failure(AuthErrors.InvalidCredentials);
 
         var validPassword = await _userManager.CheckPasswordAsync(user, password);
         if (!validPassword)
-            return Result<AuthResult>.Failure("اسم المستخدم أو كلمة المرور غير صحيحة");
+            return Result<AuthResult>.Failure(AuthErrors.InvalidCredentials);
 
         return await GenerateAuthResult(user);
     }
@@ -43,18 +44,18 @@ public class AuthService : IAuthService
     {
         var principal = GetPrincipalFromExpiredToken(accessToken);
         if (principal is null)
-            return Result<AuthResult>.Failure("Access token غير صالح");
+            return Result<AuthResult>.Failure(AuthErrors.InvalidAccessToken);
 
         var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId is null)
-            return Result<AuthResult>.Failure("Access token غير صالح");
+            return Result<AuthResult>.Failure(AuthErrors.InvalidAccessToken);
 
         var user = await _userManager.FindByIdAsync(userId);
         if (user is null || !user.IsActive)
-            return Result<AuthResult>.Failure("المستخدم غير موجود أو معطل");
+            return Result<AuthResult>.Failure(AuthErrors.UserNotFoundOrInactive);
 
         if (user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            return Result<AuthResult>.Failure("Refresh token غير صالح أو منتهي الصلاحية");
+            return Result<AuthResult>.Failure(AuthErrors.InvalidRefreshToken);
 
         return await GenerateAuthResult(user);
     }
@@ -63,7 +64,7 @@ public class AuthService : IAuthService
     {
         var existingUser = await _userManager.FindByNameAsync(username);
         if (existingUser is not null)
-            return Result<Guid>.Failure("اسم المستخدم مستخدم بالفعل");
+            return Result<Guid>.Failure(AuthErrors.UsernameAlreadyExists);
 
         // Ensure role exists
         if (!await _roleManager.RoleExistsAsync(role))
@@ -95,7 +96,7 @@ public class AuthService : IAuthService
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
-            return Result.Failure("المستخدم غير موجود");
+            return Result.Failure(AuthErrors.UserNotFound);
 
         var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
         if (!result.Succeeded)

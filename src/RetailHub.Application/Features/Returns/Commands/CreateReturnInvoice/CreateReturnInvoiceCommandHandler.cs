@@ -172,7 +172,9 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                             CashDrawerTransactionType.Return,
                             -cashRefund,
                             referenceId: returnInvoice.Id,
-                            notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber} (نقدي)");
+                            notes: string.Format(
+                                _localizer[MessageKeys.SaleInvoiceReturnCashNotes],
+                                originalInvoice.InvoiceNumber));
 
                         await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
                     }
@@ -184,7 +186,9 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                         CashDrawerTransactionType.Return,
                         -totalRefundAmount,
                         referenceId: returnInvoice.Id,
-                        notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber}");
+                        notes: string.Format(
+                            _localizer[MessageKeys.SaleInvoiceReturnNotes],
+                            originalInvoice.InvoiceNumber));
 
                     await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
                 }
@@ -197,7 +201,9 @@ public class CreateReturnInvoiceCommandHandler : IRequestHandler<CreateReturnInv
                 CashDrawerTransactionType.Return,
                 -totalRefundAmount,
                 referenceId: returnInvoice.Id,
-                notes: $"مرتجع فاتورة بيع رقم {originalInvoice.InvoiceNumber}");
+                notes: string.Format(
+                    _localizer[MessageKeys.SaleInvoiceReturnNotes],
+                    originalInvoice.InvoiceNumber));
 
             await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }

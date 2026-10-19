@@ -38,6 +38,7 @@
   <data name="MaxLengthExceeded" xml:space="preserve"><value>يجب ألا يتجاوز {0} {1} حرفاً.</value></data>
   <data name="MustBePositive" xml:space="preserve"><value>{0} يجب أن يكون أكبر من صفر.</value></data>
   <data name="MustNotBeNegative" xml:space="preserve"><value>{0} لا يمكن أن يكون سالباً.</value></data>
+  <data name="FieldMinLength" xml:space="preserve"><value>{0} يجب أن يكون {1} أحرف على الأقل.</value></data>
 
   <!-- ── التصنيف ── -->
   <data name="CategoryNameAr" xml:space="preserve"><value>اسم التصنيف بالعربية</value></data>
@@ -111,6 +112,8 @@
   <data name="ReturnInvoiceItemId" xml:space="preserve"><value>معرف صنف الفاتورة</value></data>
   <data name="ReturnQuantity" xml:space="preserve"><value>كمية المرتجع</value></data>
   <data name="ReturnQuantityExceeded" xml:space="preserve"><value>كمية المرتجع ({0}) تتجاوز الكمية المتبقية القابلة للإرجاع ({1}) للصنف '{2}'.</value></data>
+  <data name="SaleInvoiceReturnNotes" xml:space="preserve"><value>مرتجع فاتورة بيع رقم {0}</value></data>
+  <data name="SaleInvoiceReturnCashNotes" xml:space="preserve"><value>مرتجع فاتورة بيع رقم {0} (نقدي)</value></data>
 
   <!-- ── الموظفون ── -->
   <data name="EmployeeName" xml:space="preserve"><value>اسم الموظف</value></data>
@@ -125,4 +128,50 @@
   <!-- ── الدرج النقدي ── -->
   <data name="CashDrawerTransactionType" xml:space="preserve"><value>نوع المعاملة</value></data>
   <data name="CashDrawerAmountNonZero" xml:space="preserve"><value>مبلغ المعاملة لا يمكن أن يكون صفراً.</value></data>
+  <data name="SaleInvoiceNotes" xml:space="preserve"><value>فاتورة بيع رقم {0}</value></data>
+  <data name="VoidSaleInvoiceNotes" xml:space="preserve"><value>إلغاء فاتورة بيع رقم {0}</value></data>
+  <data name="PurchaseInvoiceNotes" xml:space="preserve"><value>فاتورة شراء رقم {0}</value></data>
+  <data name="CustomerPaymentNotes" xml:space="preserve"><value>تحصيل دفعة من العميل: {0}</value></data>
+
+  <!-- ── وحدات المنتجات ── -->
+  <data name="ProductUnitNotFound" xml:space="preserve"><value>وحدة المنتج غير موجودة.</value></data>
+  <data name="ProductUnitMismatch" xml:space="preserve"><value>وحدة المنتج لا تنتمي للمنتج المحدد.</value></data>
+  <data name="DefaultProductUnitNotFound" xml:space="preserve"><value>لا توجد وحدة افتراضية للمنتج.</value></data>
+  <data name="CannotDeleteLastProductUnit" xml:space="preserve"><value>لا يمكن حذف آخر وحدة للمنتج. يجب أن يحتوي المنتج على وحدة واحدة على الأقل.</value></data>
+  <data name="UnitNameRequired" xml:space="preserve"><value>اسم وحدة البيع مطلوب.</value></data>
+  <data name="ConversionFactorMustBePositive" xml:space="preserve"><value>معامل التحويل يجب أن يكون أكبر من صفر.</value></data>
+  <data name="UnitSellingPriceNotNegative" xml:space="preserve"><value>سعر بيع الوحدة لا يمكن أن يكون سالباً.</value></data>
+
+  <!-- ── تسويات المخزون ── -->
+  <data name="BatchNotFoundForProduct" xml:space="preserve"><value>التشغيلة غير موجودة لهذا المنتج.</value></data>
+  <data name="AdjustmentReasonRequired" xml:space="preserve"><value>سبب التسوية مطلوب.</value></data>
+  <data name="AdjustmentReasonMaxLength" xml:space="preserve"><value>سبب التسوية يجب ألا يتجاوز 500 حرف.</value></data>
+  <data name="DamageQuantityExceedsBatch" xml:space="preserve"><value>الكمية المطلوب إعدامها ({0}) أكبر من رصيد التشغيلة ({1}).</value></data>
+  <data name="StockAdjustmentNoDifference" xml:space="preserve"><value>الكمية الفعلية مطابقة للرصيد المسجل، لا توجد تسوية.</value></data>
+
+  <!-- ── الخصومات ── -->
+  <data name="DiscountRangeInvalid" xml:space="preserve"><value>نسبة الخصم يجب أن تكون بين 0% و 100%.</value></data>
+  <data name="DiscountExceedsCashierLimit" xml:space="preserve"><value>نسبة الخصم تتجاوز الحد المسموح للكاشير ({0}%). تتطلب موافقة المدير.</value></data>
+
+  <!-- ── الورديات ── -->
+  <data name="ShiftNotFound" xml:space="preserve"><value>الوردية غير موجودة.</value></data>
+  <data name="ActiveShiftAlreadyExists" xml:space="preserve"><value>يوجد وردية مفتوحة بالفعل لهذا الكاشير.</value></data>
+
+  <!-- ── المصادقة والمستخدمين ── -->
+  <data name="UserNotFound" xml:space="preserve"><value>المستخدم غير موجود.</value></data>
+  <data name="InvalidCredentials" xml:space="preserve"><value>اسم المستخدم أو كلمة المرور غير صحيحة.</value></data>
+  <data name="InvalidAccessToken" xml:space="preserve"><value>رمز الوصول (Access token) غير صالح.</value></data>
+  <data name="UserNotFoundOrInactive" xml:space="preserve"><value>المستخدم غير موجود أو معطل.</value></data>
+  <data name="InvalidRefreshToken" xml:space="preserve"><value>رمز التحديث (Refresh token) غير صالح أو منتهي الصلاحية.</value></data>
+  <data name="UsernameAlreadyExists" xml:space="preserve"><value>اسم المستخدم مستخدم بالفعل.</value></data>
+  <data name="Username" xml:space="preserve"><value>اسم المستخدم</value></data>
+  <data name="Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="FullName" xml:space="preserve"><value>الاسم الكامل</value></data>
+  <data name="Role" xml:space="preserve"><value>الدور</value></data>
+  <data name="CurrentPassword" xml:space="preserve"><value>كلمة المرور الحالية</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
+  <data name="AccessToken" xml:space="preserve"><value>رمز الوصول</value></data>
+  <data name="RefreshToken" xml:space="preserve"><value>رمز التحديث</value></data>
+  <data name="UsernameFormatInvalid" xml:space="preserve"><value>اسم المستخدم يحتوي أحرف إنجليزية وأرقام ونقاط فقط.</value></data>
+  <data name="RoleInvalid" xml:space="preserve"><value>الدور يجب أن يكون Admin أو Cashier أو InventoryManager.</value></data>
 </root>

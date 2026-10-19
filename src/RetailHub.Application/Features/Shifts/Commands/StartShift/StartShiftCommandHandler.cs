@@ -25,7 +25,7 @@ public class StartShiftCommandHandler : IRequestHandler<StartShiftCommand, Resul
         var activeShift = await _unitOfWork.Shifts.GetActiveShiftAsync(request.CashierId, ct);
         if (activeShift is not null)
         {
-            return Result<ShiftDto>.Failure("يوجد وردية مفتوحة بالفعل لهذا الكاشير.");
+            return Result<ShiftDto>.Failure(_localizer[MessageKeys.ActiveShiftAlreadyExists]);
         }
 
         var shift = Shift.Start(

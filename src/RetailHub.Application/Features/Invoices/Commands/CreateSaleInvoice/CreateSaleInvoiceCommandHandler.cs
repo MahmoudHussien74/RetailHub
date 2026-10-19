@@ -46,15 +46,15 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
             {
                 unit = await _unitOfWork.ProductUnits.GetByIdAsync(item.UnitId.Value, ct);
                 if (unit is null)
-                    return Result<Guid>.Failure("وحدة المنتج غير موجودة.");
+                    return Result<Guid>.Failure(_localizer[MessageKeys.ProductUnitNotFound]);
                 if (unit.ProductId != item.ProductId)
-                    return Result<Guid>.Failure("وحدة المنتج لا تنتمي للمنتج المحدد.");
+                    return Result<Guid>.Failure(_localizer[MessageKeys.ProductUnitMismatch]);
             }
             else
             {
                 unit = await _unitOfWork.ProductUnits.GetDefaultUnitByProductIdAsync(item.ProductId, ct);
                 if (unit is null)
-                    return Result<Guid>.Failure($"لا توجد وحدة افتراضية للمنتج.");
+                    return Result<Guid>.Failure(_localizer[MessageKeys.DefaultProductUnitNotFound]);
             }
 
             resolvedItems.Add(new ResolvedSaleItem(
@@ -222,7 +222,9 @@ public class CreateSaleInvoiceCommandHandler : IRequestHandler<CreateSaleInvoice
                 CashDrawerTransactionType.Sale,
                 request.AmountPaid,
                 referenceId: invoice.Id,
-                notes: $"فاتورة بيع رقم {invoice.InvoiceNumber}");
+                notes: string.Format(
+                    _localizer[MessageKeys.SaleInvoiceNotes],
+                    invoice.InvoiceNumber));
 
             await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }

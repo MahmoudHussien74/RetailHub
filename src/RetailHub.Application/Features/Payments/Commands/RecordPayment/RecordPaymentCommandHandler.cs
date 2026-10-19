@@ -65,7 +65,9 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
                 CashDrawerTransactionType.Sale,
                 request.Amount,
                 referenceId: payment.Id,
-                notes: $"تحصيل دفعة من العميل: {customer.Name}");
+                notes: string.Format(
+                    _localizer[MessageKeys.CustomerPaymentNotes],
+                    customer.Name));
 
             await _unitOfWork.CashDrawerTransactions.AddAsync(cashTransaction, ct);
         }
